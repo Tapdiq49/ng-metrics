@@ -51,7 +51,8 @@ export const analyzeCommand = new Command('analyze')
             const typeColor: Record<string, chalk.Chalk> = {
               deprecated_api: chalk.red,
               anti_pattern: chalk.yellow,
-              rxjs_issue: chalk.magenta
+              rxjs_issue: chalk.magenta,
+              security_issue: chalk.red.bold
             };
             const lineInfo = issue.line ? chalk.gray(`(line ${issue.line})`) : '';
             console.log(`    ${typeColor[issue.type](`[${issue.type}]`)} ${issue.message} ${lineInfo}`);

@@ -14,6 +14,14 @@ export interface FileAnalysisResult {
 }
 
 export class CodeAnalysisService {
+  /**
+   * Performs code analysis on all TypeScript (.ts) and HTML template files
+   * in the specified source directory, looking for anti-patterns, deprecations, and security risks.
+   * 
+   * @param projectPath The root directory path of the project.
+   * @param customSrcDir Optional custom sub-directory to scan instead of the default 'src'.
+   * @returns An array containing the analysis results grouped by file.
+   */
   public analyze(projectPath: string = process.cwd(), customSrcDir?: string): FileAnalysisResult[] {
     const results: FileAnalysisResult[] = [];
     // Resolve srcDir using path.resolve so that both relative (e.g. 'src-test') and 
@@ -36,6 +44,12 @@ export class CodeAnalysisService {
     return results;
   }
 
+  /**
+   * Recursively scans a directory to find all TypeScript (.ts) and HTML (.html) files.
+   * 
+   * @param dir The directory path to scan.
+   * @returns An array of absolute file paths matching the extensions.
+   */
   private scanDirectory(dir: string): string[] {
     const files: string[] = [];
     const items = fs.readdirSync(dir);
@@ -54,6 +68,12 @@ export class CodeAnalysisService {
     return files;
   }
 
+  /**
+   * Triggers the appropriate scanner (TypeScript or Template) based on the file type.
+   * 
+   * @param filePath The absolute path of the file to analyze.
+   * @returns An array of detected code issues.
+   */
   private analyzeFile(filePath: string): CodeIssue[] {
     const content = fs.readFileSync(filePath, 'utf8');
     const issues: CodeIssue[] = [];
@@ -68,6 +88,13 @@ export class CodeAnalysisService {
     return issues;
   }
 
+  /**
+   * Scans a TypeScript file line-by-line to check for component strategies,
+   * deprecations, RxJS memory leaks, and DOM sanitizer bypasses.
+   * 
+   * @param lines An array of lines representing the TypeScript file contents.
+   * @returns An array of detected code issues.
+   */
   private analyzeTypeScript(lines: string[]): CodeIssue[] {
     const issues: CodeIssue[] = [];
     const content = lines.join('\n');
@@ -163,6 +190,12 @@ export class CodeAnalysisService {
     return issues;
   }
 
+  /**
+   * Identifies nested .subscribe() patterns in TS code to recommend flat mapping instead.
+   * 
+   * @param lines An array of lines representing the TypeScript file contents.
+   * @returns An array of detected nested subscription issues.
+   */
   private detectNestedSubscriptions(lines: string[]): CodeIssue[] {
     const issues: CodeIssue[] = [];
     let subscriptionDepth = 0;
@@ -197,6 +230,13 @@ export class CodeAnalysisService {
     return issues;
   }
 
+  /**
+   * Scans HTML template files for legacy structural directives, missing trackBy functions,
+   * index tracking in @for loops, and XSS risks like [innerHTML].
+   * 
+   * @param lines An array of lines representing the HTML template contents.
+   * @returns An array of detected template issues.
+   */
   private analyzeTemplate(lines: string[]): CodeIssue[] {
     const issues: CodeIssue[] = [];
 
