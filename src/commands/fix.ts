@@ -4,7 +4,8 @@ import ora from 'ora';
 import { FixEngineService } from '../services/fix-engine.service';
 
 export const fixCommand = new Command('fix')
-  .description('Apply safe fixes to package.json')
+  .description('Apply safe fixes to package.json and source code files')
+  .option('-d, --dir <dir>', 'Source directory to analyze and fix (default: src)')
   .option('--dry-run', 'Show changes without modifying files (default)')
   .option('--apply', 'Actually apply the changes')
   .action(async (options) => {
@@ -13,7 +14,7 @@ export const fixCommand = new Command('fix')
 
     try {
       const fixEngine = new FixEngineService();
-      const result = fixEngine.apply(process.cwd(), dryRun);
+      const result = fixEngine.apply(process.cwd(), options.dir, dryRun);
       
       spinner.succeed(dryRun ? 'Dry run completed!' : 'Fixes applied successfully!');
 

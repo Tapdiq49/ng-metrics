@@ -97,6 +97,24 @@ export class CodeAnalysisService {
           line: lineNumber
         });
       }
+
+      // Direct reference to window or document
+      if (/\bwindow\.[a-zA-Z]/.test(line) || /\bdocument\.[a-zA-Z]/.test(line)) {
+        issues.push({
+          type: 'anti_pattern',
+          message: 'Direct reference to window or document detected. Inject DOCUMENT token instead for SSR compatibility',
+          line: lineNumber
+        });
+      }
+
+      // Direct DOM manipulation via nativeElement
+      if (line.includes('.nativeElement.')) {
+        issues.push({
+          type: 'anti_pattern',
+          message: 'Direct DOM manipulation via nativeElement detected. Use Renderer2 instead',
+          line: lineNumber
+        });
+      }
     }
 
     issues.push(...this.detectNestedSubscriptions(lines));
