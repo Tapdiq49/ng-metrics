@@ -2,9 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export interface CodeIssue {
-  type: 'deprecated_api' | 'anti_pattern' | 'rxjs_issue';
+  type: 'deprecated_api' | 'anti_pattern' | 'rxjs_issue' | 'security_issue';
   message: string;
   line?: number;
+  suggestion?: string;
 }
 
 export interface FileAnalysisResult {
@@ -77,7 +78,8 @@ export class CodeAnalysisService {
       issues.push({
         type: 'anti_pattern',
         message: 'Component is missing ChangeDetectionStrategy.OnPush. Consider adding it for optimized performance',
-        line: compIndex !== -1 ? compIndex + 1 : undefined
+        line: compIndex !== -1 ? compIndex + 1 : undefined,
+        suggestion: "Add 'changeDetection: ChangeDetectionStrategy.OnPush' inside the @Component decorator options."
       });
     }
 
@@ -89,7 +91,8 @@ export class CodeAnalysisService {
       issues.push({
         type: 'rxjs_issue',
         message: 'Potential memory leak: active subscription found without takeUntil, take(1), first(), or unsubscribe()',
-        line: subIndex !== -1 ? subIndex + 1 : undefined
+        line: subIndex !== -1 ? subIndex + 1 : undefined,
+        suggestion: "Clean up the subscription using the 'takeUntil' operator with a destroy subject, or store it and call '.unsubscribe()' in ngOnDestroy()."
       });
     }
 
@@ -101,7 +104,8 @@ export class CodeAnalysisService {
         issues.push({
           type: 'deprecated_api',
           message: 'toPromise() is deprecated - use firstValueFrom or lastValueFrom from rxjs',
-          line: lineNumber
+          line: lineNumber,
+          suggestion: "Change '.toPromise()' to 'firstValueFrom(observable)' (import from 'rxjs')."
         });
       }
 
@@ -109,7 +113,8 @@ export class CodeAnalysisService {
         issues.push({
           type: 'deprecated_api',
           message: 'HttpModule is deprecated - use HttpClientModule instead',
-          line: lineNumber
+          line: lineNumber,
+          suggestion: "Replace 'HttpModule' imports with 'HttpClientModule'."
         });
       }
 
@@ -117,7 +122,8 @@ export class CodeAnalysisService {
         issues.push({
           type: 'deprecated_api',
           message: '@ViewChild static:true is deprecated',
-          line: lineNumber
+          line: lineNumber,
+          suggestion: "Remove the '{ static: true }' or '{ static: false }' option parameter entirely."
         });
       }
 
@@ -126,7 +132,8 @@ export class CodeAnalysisService {
         issues.push({
           type: 'anti_pattern',
           message: 'Direct reference to window or document detected. Inject DOCUMENT token instead for SSR compatibility',
-          line: lineNumber
+          line: lineNumber,
+          suggestion: "Inject the DOCUMENT token in the constructor: constructor(@Inject(DOCUMENT) private document: Document) (import DOCUMENT from '@angular/common')."
         });
       }
 
@@ -135,7 +142,18 @@ export class CodeAnalysisService {
         issues.push({
           type: 'anti_pattern',
           message: 'Direct DOM manipulation via nativeElement detected. Use Renderer2 instead',
-          line: lineNumber
+          line: lineNumber,
+          suggestion: "Inject 'Renderer2' and use its methods (e.g. renderer.setStyle, renderer.setAttribute) instead of direct nativeElement mutation."
+        });
+      }
+
+      // DOM Sanitizer bypass checks (XSS Security risk)
+      if (line.includes('bypassSecurityTrust')) {
+        issues.push({
+          type: 'security_issue',
+          message: 'Bypassing Angular DOM Sanitizer (bypassSecurityTrustXXX) detected. Bypassing security checks can introduce critical XSS vulnerabilities',
+          line: lineNumber,
+          suggestion: "Ensure input data is heavily sanitized using a library like DOMPurify before displaying it, or avoid bypassing security trust."
         });
       }
     }
@@ -159,7 +177,8 @@ export class CodeAnalysisService {
           issues.push({
             type: 'rxjs_issue',
             message: 'Nested subscriptions detected - consider using higher-order operators (switchMap, mergeMap, etc.)',
-            line: lineNumber
+            line: lineNumber,
+            suggestion: "Use higher-order mapping operators like 'switchMap', 'mergeMap', or 'concatMap' to chain observable requests cleanly."
           });
         }
         subscriptionDepth++;
@@ -189,7 +208,8 @@ export class CodeAnalysisService {
         issues.push({
           type: 'anti_pattern',
           message: 'Legacy structural directive syntax detected - consider migrating to Angular 17+ control flow (@if, @for)',
-          line: lineNumber
+          line: lineNumber,
+          suggestion: "Run Angular migration tool: 'ng g @angular/core:control-flow' to automatically migrate to @if/@for syntax."
         });
       }
 
@@ -197,7 +217,8 @@ export class CodeAnalysisService {
         issues.push({
           type: 'anti_pattern',
           message: '*ngFor directive is missing trackBy. Consider adding trackBy to improve list rendering performance',
-          line: lineNumber
+          line: lineNumber,
+          suggestion: "Add a 'trackBy: trackById' function to the *ngFor loop to track items by a unique identifier."
         });
       }
 
@@ -205,7 +226,17 @@ export class CodeAnalysisService {
         issues.push({
           type: 'anti_pattern',
           message: 'Discouraged @for tracking by index. Track by unique identifier instead if items can mutate',
-          line: lineNumber
+          line: lineNumber,
+          suggestion: "Change 'track $index' to track a unique field of the item (e.g. 'track item.id') to optimize rendering."
+        });
+      }
+
+      if (line.includes('[innerHTML]')) {
+        issues.push({
+          type: 'security_issue',
+          message: '[innerHTML] binding detected. This can lead to XSS vulnerabilities if the bound content is not properly sanitized',
+          line: lineNumber,
+          suggestion: "Ensure the data bound to [innerHTML] is sanitized using DOMPurify, or avoid [innerHTML] entirely if you only need text interpolation ({{ value }})."
         });
       }
     }

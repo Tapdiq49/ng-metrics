@@ -5,6 +5,7 @@ import { scanCommand } from '../commands/scan';
 import { fixCommand } from '../commands/fix';
 import { codeCommand } from '../commands/code';
 import { analyzeCommand } from '../commands/analyze';
+import { auditCommand } from '../commands/audit';
 
 const program = new Command();
 
@@ -15,7 +16,8 @@ program
   .addCommand(scanCommand)
   .addCommand(fixCommand)
   .addCommand(codeCommand)
-  .addCommand(analyzeCommand);
+  .addCommand(analyzeCommand)
+  .addCommand(auditCommand);
 
 if (process.argv.length <= 2) {
   process.argv.push('analyze');

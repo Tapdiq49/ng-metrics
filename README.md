@@ -149,6 +149,7 @@ Generates step-by-step migration plans for:
 | `ng-metrics analyze` | Run full analysis and generate unified report |
 | `ng-metrics scan` | Scan dependencies only |
 | `ng-metrics code` | Analyze TypeScript and template files |
+| `ng-metrics audit` | Audit the project for security issues, XSS risks, and unsafe practices |
 | `ng-metrics fix` | Show available fixes (dry-run) |
 | `ng-metrics --help` | Show all commands and options |
 
