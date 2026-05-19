@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { PackageScannerService, ScanResult } from './package-scanner.service';
 import { RiskAnalysisService, HealthScore } from './risk-analysis.service';
 import { CodeAnalysisService, FileAnalysisResult } from './code-analysis.service';
@@ -17,16 +19,55 @@ export interface UnifiedReport {
 }
 
 export class NgMetricsEngineService {
+  /**
+   * Climbs up the directory tree starting from startDir until it finds a directory
+   * containing a package.json file. Falls back to process.cwd() if none is found.
+   */
+  private findProjectRoot(startDir: string): string {
+    let currentDir = path.resolve(startDir);
+    
+    try {
+      if (fs.existsSync(currentDir) && fs.statSync(currentDir).isFile()) {
+        currentDir = path.dirname(currentDir);
+      }
+    } catch (e) {
+      // Ignore
+    }
+
+    while (true) {
+      if (fs.existsSync(path.join(currentDir, 'package.json'))) {
+        return currentDir;
+      }
+      const parentDir = path.dirname(currentDir);
+      if (parentDir === currentDir) {
+        break;
+      }
+      currentDir = parentDir;
+    }
+    return process.cwd();
+  }
+
+  /**
+   * Coordinates the full analysis report. Resolves the correct project root
+   * to ensure code analysis and package scanning check the same project context.
+   */
   public analyze(projectPath: string = process.cwd(), customSrcDir?: string): UnifiedReport {
+    let resolvedProjectPath = projectPath;
+    if (customSrcDir) {
+      // Locate the project root containing package.json relative to the custom source directory
+      const absoluteSrcDir = path.resolve(projectPath, customSrcDir);
+      resolvedProjectPath = this.findProjectRoot(absoluteSrcDir);
+    }
+
     const packageScanner = new PackageScannerService();
     const riskAnalyzer = new RiskAnalysisService();
     const codeAnalyzer = new CodeAnalysisService();
     const fixSuggestionService = new FixSuggestionService();
     const migrationAdvisor = new MigrationAdvisorService();
 
-    const scanResult = packageScanner.scan(projectPath);
+    const scanResult = packageScanner.scan(resolvedProjectPath);
     const healthScore = riskAnalyzer.analyze(scanResult);
-    const codeIssues = codeAnalyzer.analyze(projectPath, customSrcDir);
+    const codeIssues = codeAnalyzer.analyze(resolvedProjectPath, customSrcDir);
     const fixSuggestions = fixSuggestionService.generate(healthScore, scanResult);
     const migrationPlan = migrationAdvisor.advise(scanResult, codeIssues);
 

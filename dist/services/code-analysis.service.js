@@ -39,7 +39,9 @@ const path = __importStar(require("path"));
 class CodeAnalysisService {
     analyze(projectPath = process.cwd(), customSrcDir) {
         const results = [];
-        const srcDir = customSrcDir ? path.join(projectPath, customSrcDir) : path.join(projectPath, 'src');
+        // Resolve srcDir using path.resolve so that both relative (e.g. 'src-test') and 
+        // absolute paths (e.g. 'C:\repos\ERUSUM\app-frontend\src') are correctly supported.
+        const srcDir = customSrcDir ? path.resolve(projectPath, customSrcDir) : path.resolve(projectPath, 'src');
         if (!fs.existsSync(srcDir)) {
             return results;
         }

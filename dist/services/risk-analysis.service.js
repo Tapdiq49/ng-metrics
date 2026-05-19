@@ -32,6 +32,16 @@ class RiskAnalysisService {
         const deprecatedPackages = [];
         for (const pkg of scanResult.packages) {
             if (pkg.status?.includes('deprecated') || pkg.status?.includes('legacy')) {
+                // Exclude risky packages (they have their own specific penalty and fix suggestions
+                // under calculateRiskyPackagesPenalty to avoid double-penalizing the project health score)
+                if (RiskAnalysisService.RISKY_PACKAGES.includes(pkg.name)) {
+                    continue;
+                }
+                // Exclude zone.js in Angular 21+ (since zone.js in Angular 21+ is specifically monitored
+                // and penalized separately in calculateZoneJsPenalty)
+                if (pkg.name === 'zone.js' && scanResult.metadata.isAngular21Plus) {
+                    continue;
+                }
                 deprecatedPackages.push(pkg);
             }
         }
