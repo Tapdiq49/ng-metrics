@@ -116,19 +116,22 @@ Next Steps:
   - `HttpModule` → use `HttpClientModule`
   - `@ViewChild static:true`
 - **Anti-patterns**:
-  - Legacy structural directives (*ngIf/*ngFor) for Angular 17+ control flow
+  - Legacy structural directives (`*ngIf`, `*ngFor`) for Angular 17+ control flow
+  - Direct reference to `window` or `document` (reduces SSR compatibility)
+  - Direct DOM manipulation via `ElementRef.nativeElement` (use `Renderer2` instead)
+  - Components missing `ChangeDetectionStrategy.OnPush` (performance optimization)
+  - Lists (`*ngFor`) missing `trackBy` function (performance optimization)
+  - Discouraged `@for` list tracking by `$index` or `index`
 - **RxJS Bad Patterns**:
   - Nested subscriptions → use higher-order operators (switchMap, mergeMap, etc.)
+  - Potential memory leaks (active subscriptions without `takeUntil`, `take(1)`, `first()`, or `unsubscribe()`)
 
 ## Fix Engine
 
 ### Safe Fixes (Auto-applicable)
-- Remove tslint
-- Remove codelyzer
-
-### Unsafe Fixes (Not Auto-applicable)
-- Angular core version upgrades
-- RxJS major version changes
+- Remove `tslint` and `codelyzer` from package dependencies
+- Remove legacy `{ static: true | false }` configurations from `@ViewChild` declarations
+- Automatically migrate RxJS `.toPromise()` calls to `firstValueFrom()` and add the correct `'rxjs'` import if missing
 
 ## Migration Advisor
 
