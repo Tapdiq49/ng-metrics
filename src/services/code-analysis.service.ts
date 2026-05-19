@@ -69,6 +69,29 @@ export class CodeAnalysisService {
 
   private analyzeTypeScript(lines: string[]): CodeIssue[] {
     const issues: CodeIssue[] = [];
+    const content = lines.join('\n');
+
+    // Check Component ChangeDetectionStrategy.OnPush
+    if (content.includes('@Component') && !content.includes('ChangeDetectionStrategy.OnPush')) {
+      const compIndex = lines.findIndex(l => l.includes('@Component'));
+      issues.push({
+        type: 'anti_pattern',
+        message: 'Component is missing ChangeDetectionStrategy.OnPush. Consider adding it for optimized performance',
+        line: compIndex !== -1 ? compIndex + 1 : undefined
+      });
+    }
+
+    // Check RxJS Subscription Memory Leak
+    const hasSubscribe = content.includes('.subscribe(');
+    const hasUnsubscribe = content.includes('.unsubscribe()') || content.includes('takeUntil') || content.includes('first(') || content.includes('take(1)');
+    if (hasSubscribe && !hasUnsubscribe) {
+      const subIndex = lines.findIndex(l => l.includes('.subscribe('));
+      issues.push({
+        type: 'rxjs_issue',
+        message: 'Potential memory leak: active subscription found without takeUntil, take(1), first(), or unsubscribe()',
+        line: subIndex !== -1 ? subIndex + 1 : undefined
+      });
+    }
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -166,6 +189,22 @@ export class CodeAnalysisService {
         issues.push({
           type: 'anti_pattern',
           message: 'Legacy structural directive syntax detected - consider migrating to Angular 17+ control flow (@if, @for)',
+          line: lineNumber
+        });
+      }
+
+      if (line.includes('*ngFor') && !line.includes('trackBy')) {
+        issues.push({
+          type: 'anti_pattern',
+          message: '*ngFor directive is missing trackBy. Consider adding trackBy to improve list rendering performance',
+          line: lineNumber
+        });
+      }
+
+      if (line.includes('@for') && (line.includes('track $index') || line.includes('track index'))) {
+        issues.push({
+          type: 'anti_pattern',
+          message: 'Discouraged @for tracking by index. Track by unique identifier instead if items can mutate',
           line: lineNumber
         });
       }
