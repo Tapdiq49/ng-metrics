@@ -98,25 +98,58 @@ export class FixEngineService {
       const files = this.scanDirectory(srcDir);
       for (const file of files) {
         const fileContent = fs.readFileSync(file, 'utf8');
-        let modifiedContent = fileContent;
+        const lines = fileContent.split('\n');
         let fileChanged = false;
 
-        // Apply ViewChild static parameter removal
-        // Matching: @ViewChild('name', { static: true }) or @ViewChild(Component, { static: false })
-        const viewChildRegex = /@ViewChild\(([^,]+),\s*\{\s*static:\s*(?:true|false)\s*\}\)/g;
-        if (viewChildRegex.test(modifiedContent)) {
-          modifiedContent = modifiedContent.replace(viewChildRegex, '@ViewChild($1)');
-          fileChanged = true;
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          const trimmed = line.trim();
+
+          // Skip comment lines and regex/implementation lines in the tool itself
+          if (
+            trimmed.startsWith('//') || 
+            trimmed.startsWith('*') || 
+            trimmed.startsWith('/*') ||
+            trimmed.includes('toPromiseRegex') ||
+            trimmed.includes('viewChildRegex')
+          ) {
+            continue;
+          }
+
+          let modifiedLine = line;
+
+          // Apply ViewChild static parameter removal
+          // Matching: @ViewChild('name', { static: true }) or @ViewChild(Component, { static: false })
+          const viewChildRegex = /@ViewChild\(([^,]+),\s*\{\s*static:\s*(?:true|false)\s*\}\)/g;
+          if (viewChildRegex.test(modifiedLine)) {
+            modifiedLine = modifiedLine.replace(viewChildRegex, '@ViewChild($1)');
+            fileChanged = true;
+          }
+
+          // Apply toPromise() to firstValueFrom() conversion
+          // Matching: someObservable.toPromise() -> firstValueFrom(someObservable)
+          const toPromiseRegex = /([a-zA-Z0-9_$\.\(\)\'\"\/\[\]\-]+)\.toPromise\(\)/g;
+          if (toPromiseRegex.test(modifiedLine)) {
+            // Skip matching string literals of toPromise inside includes()
+            if (
+              !modifiedLine.includes("'.toPromise()'") &&
+              !modifiedLine.includes('".toPromise()"') &&
+              !modifiedLine.includes('includes(') &&
+              !modifiedLine.includes('indexOf(')
+            ) {
+              modifiedLine = modifiedLine.replace(toPromiseRegex, 'firstValueFrom($1)');
+              fileChanged = true;
+            }
+          }
+
+          lines[i] = modifiedLine;
         }
 
-        // Apply toPromise() to firstValueFrom() conversion
-        // Matching: someObservable.toPromise() -> firstValueFrom(someObservable)
-        const toPromiseRegex = /([a-zA-Z0-9_\.\(\)\'\"\/\[\]\-]+)\.toPromise\(\)/g;
-        if (toPromiseRegex.test(modifiedContent)) {
-          modifiedContent = modifiedContent.replace(toPromiseRegex, 'firstValueFrom($1)');
-          
+        if (fileChanged) {
+          let modifiedContent = lines.join('\n');
+
           // Ensure firstValueFrom is imported from 'rxjs'
-          if (!modifiedContent.includes('firstValueFrom')) {
+          if (modifiedContent.includes('firstValueFrom') && !fileContent.includes('firstValueFrom')) {
             const rxjsImportRegex = /import\s*\{([^}]+)\}\s*from\s*['"]rxjs['"];/;
             if (rxjsImportRegex.test(modifiedContent)) {
               // Append to existing rxjs import
@@ -128,10 +161,7 @@ export class FixEngineService {
               modifiedContent = `import { firstValueFrom } from 'rxjs';\n` + modifiedContent;
             }
           }
-          fileChanged = true;
-        }
 
-        if (fileChanged) {
           const relativePath = path.relative(resolvedProjectPath, file);
           changes.push({
             type: 'code_fix',
