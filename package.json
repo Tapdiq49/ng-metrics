@@ -1,7 +1,12 @@
 {
   "name": "ng-metrics",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI tool for Angular metrics",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Tapdiq49/ng-metrics"
+  },
+  "homepage": "https://github.com/Tapdiq49/ng-metrics/blob/main/README.md",
   "main": "dist/index.js",
   "bin": {
     "ng-metrics": "./dist/cli/index.js"
