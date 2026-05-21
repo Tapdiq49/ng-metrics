@@ -1,6 +1,6 @@
 {
   "name": "ng-metrics",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CLI tool for Angular metrics",
   "main": "dist/index.js",
   "bin": {
@@ -16,7 +16,14 @@
     "dev": "ts-node src/cli/index.ts",
     "test": "vitest run src"
   },
-  "keywords": [],
+  "keywords": [
+    "angular",
+    "metrics",
+    "cli",
+    "code-analysis",
+    "static-analysis",
+    "health-score"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
