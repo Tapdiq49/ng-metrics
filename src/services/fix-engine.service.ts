@@ -1,6 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+interface PackageJson {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  [key: string]: unknown;
+}
+
 export interface FixChange {
   type: string;
   package: string;
@@ -82,7 +88,7 @@ export class FixEngineService {
       throw new Error('package.json not found');
     }
 
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as PackageJson;
     const changes: FixChange[] = [];
 
     // 1. Fix package.json dependencies
@@ -180,21 +186,22 @@ export class FixEngineService {
     return { applied: !dryRun, changes };
   }
 
-  private removeUnsafePackages(packageJson: any): FixChange[] {
+  private removeUnsafePackages(packageJson: PackageJson): FixChange[] {
     const changes: FixChange[] = [];
 
-    for (const depType of ['dependencies', 'devDependencies']) {
-      if (!packageJson[depType]) continue;
+    for (const depType of ['dependencies', 'devDependencies'] as const) {
+      const dependencies = packageJson[depType];
+      if (!dependencies) continue;
 
       for (const pkgName of FixEngineService.SAFE_TO_REMOVE) {
-        if (packageJson[depType][pkgName]) {
+        if (dependencies[pkgName]) {
           changes.push({
             type: 'remove',
             package: pkgName,
-            before: packageJson[depType][pkgName],
+            before: dependencies[pkgName],
             after: '(removed)'
           });
-          delete packageJson[depType][pkgName];
+          delete dependencies[pkgName];
         }
       }
     }
