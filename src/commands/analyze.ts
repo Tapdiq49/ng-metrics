@@ -6,13 +6,7 @@ import * as path from 'path';
 import { stringify } from 'yaml';
 import { NgMetricsEngineService } from '../services/ng-metrics-engine.service';
 import { TemplateRendererService } from '../services/template-renderer.service';
-import type { 
-  UnifiedReport, 
-  PackageMetadata, 
-  FileAnalysisResult, 
-  FixSuggestion, 
-  MigrationStep 
-} from '../types';
+import type { UnifiedReport, PackageMetadata, FixSuggestion, MigrationStep } from '../types';
 
 export const analyzeCommand = new Command('analyze')
   .description('Run full analysis and generate unified report')

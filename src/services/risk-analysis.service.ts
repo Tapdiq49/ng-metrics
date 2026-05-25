@@ -1,13 +1,6 @@
 import type { ScanResult, PackageMetadata, HealthScore } from '../types';
 
 export class RiskAnalysisService {
-  private static readonly SCORE_WEIGHTS = {
-    angularVersionAge: 25,
-    deprecatedPackages: 20,
-    zoneJsInAngular21: 15,
-    outdatedDependencies: 25,
-    riskyPackages: 15
-  };
 
   private static readonly LATEST_ANGULAR_VERSION = 21;
 

@@ -4,7 +4,6 @@ import type { FixChange, FixResult, PackageJson } from '../types';
 
 export class FixEngineService {
   private static readonly SAFE_TO_REMOVE = ['tslint', 'codelyzer'];
-  private static readonly UNSAFE_TO_UPGRADE = ['@angular/core', '@angular/common', '@angular/cli', 'rxjs'];
 
   /**
    * Climbs up the directory tree starting from startDir until it finds a directory
