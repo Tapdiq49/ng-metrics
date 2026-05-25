@@ -13,12 +13,14 @@ Keeping Angular projects healthy and up-to-date can be challenging. ng-metrics c
 
 ## Features
 
-- 🔍 **Dependency Analysis** - scan for Angular packages, deprecated dependencies, and zone.js usage
-- 📊 **Code Analysis** - detect deprecated APIs, legacy template syntax, and RxJS bad patterns
-- 🎯 **Project Health Score** - 0-100 score with excellent/good/warning/critical levels
-- 🔧 **Fix Engine** - safe auto-fixes for tslint, codelyzer, and more
-- 📋 **Migration Advisor** - step-by-step migration plans for Angular upgrades
-- 📦 **Unified Report** - single command to run all analyses at once
+- **Dependency Analysis** - scan for Angular packages, deprecated dependencies, and zone.js usage
+- **Code Analysis** - detect deprecated APIs, legacy template syntax, and RxJS bad patterns
+- **Project Health Score** - 0-100 score with excellent/good/warning/critical levels
+- **Fix Engine** - safe auto-fixes for tslint, codelyzer, and more
+- **Migration Advisor** - step-by-step migration plans for Angular upgrades
+- **Unified Report** - single command to run all analyses at once
+- **Multiple Output Formats** - export reports in text, JSON, or YAML formats
+- **File Export** - save reports to files for documentation or CI/CD integration
 
 ## Installation
 
@@ -47,6 +49,22 @@ ng-metrics analyze
 ### Analyze custom source directory
 ```bash
 ng-metrics analyze --dir src-app
+```
+
+### Export as JSON
+```bash
+ng-metrics analyze --format json
+```
+
+### Export as YAML
+```bash
+ng-metrics analyze --format yaml
+```
+
+### Save report to file
+```bash
+ng-metrics analyze --format json --output report.json
+ng-metrics analyze --format yaml --output report.yaml
 ```
 
 ### Scan dependencies only
@@ -147,6 +165,8 @@ Generates step-by-step migration plans for:
 |---------|-------------|
 | `ng-metrics` | Run full analysis (default) |
 | `ng-metrics analyze` | Run full analysis and generate unified report |
+| `ng-metrics analyze --format <format>` | Specify output format: text (default), json, yaml |
+| `ng-metrics analyze --output <file>` | Save report to file instead of stdout |
 | `ng-metrics scan` | Scan dependencies only |
 | `ng-metrics code` | Analyze TypeScript and template files |
 | `ng-metrics audit` | Audit the project for security issues, XSS risks, and unsafe practices |
@@ -157,7 +177,6 @@ Generates step-by-step migration plans for:
 
 Future features planned:
 - HTML report generation (`--format html`)
-- JSON/YAML report export
 - CI/CD integration support
 - Custom rule configuration
 - Performance analysis
