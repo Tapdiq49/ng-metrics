@@ -5,14 +5,7 @@ import { RiskAnalysisService } from './risk-analysis.service';
 import { CodeAnalysisService } from './code-analysis.service';
 import { FixSuggestionService } from './fix-suggestion.service';
 import { MigrationAdvisorService } from './migration-advisor.service';
-import type { 
-  ScanResult, 
-  HealthScore, 
-  FileAnalysisResult, 
-  GroupedSuggestions, 
-  MigrationStep,
-  UnifiedReport
-} from '../types';
+import type { HealthScore, FileAnalysisResult, GroupedSuggestions, MigrationStep, UnifiedReport } from '../types';
 
 export class NgMetricsEngineService {
   /**

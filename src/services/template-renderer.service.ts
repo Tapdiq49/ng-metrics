@@ -1,14 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { 
-  UnifiedReport, 
-  PackageMetadata, 
-  FileAnalysisResult, 
-  CodeIssue, 
-  GroupedSuggestions, 
-  FixSuggestion, 
-  MigrationStep 
-} from '../types';
+import type { UnifiedReport, PackageMetadata, FileAnalysisResult, CodeIssue, GroupedSuggestions, FixSuggestion, MigrationStep } from '../types';
 
 type HealthLevel = 'excellent' | 'good' | 'warning' | 'critical';
 type IssueType = 'deprecated_api' | 'anti_pattern' | 'rxjs_issue' | 'security_issue';
