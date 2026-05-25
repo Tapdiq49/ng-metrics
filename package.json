@@ -16,7 +16,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run copy-templates",
+    "copy-templates": "node scripts/copy-templates.js",
     "start": "node dist/cli/index.js",
     "dev": "ts-node src/cli/index.ts",
     "test": "vitest run src"
