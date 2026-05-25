@@ -4,8 +4,12 @@ import ora from 'ora';
 import * as fs from 'fs';
 import * as path from 'path';
 import { stringify } from 'yaml';
-import { NgMetricsEngineService } from '../services/ng-metrics-engine.service';
+import { NgMetricsEngineService, UnifiedReport } from '../services/ng-metrics-engine.service';
 import { TemplateRendererService } from '../services/template-renderer.service';
+import { PackageMetadata } from '../services/package-scanner.service';
+import { FileAnalysisResult, CodeIssue } from '../services/code-analysis.service';
+import { GroupedSuggestions, FixSuggestion } from '../services/fix-suggestion.service';
+import { MigrationStep } from '../services/migration-advisor.service';
 
 export const analyzeCommand = new Command('analyze')
   .description('Run full analysis and generate unified report')
@@ -57,7 +61,7 @@ export const analyzeCommand = new Command('analyze')
     }
   });
 
-function generateTextReport(report: any): string {
+function generateTextReport(report: UnifiedReport): string {
   let result = '';
 
   result += '\n' + chalk.bold('Unified Report:') + '\n';
@@ -78,7 +82,7 @@ function generateTextReport(report: any): string {
   if (report.dependencies.length > 0) {
     result += '\n' + chalk.bold('Detected Dependencies:') + '\n';
     result += '-'.repeat(60) + '\n';
-    report.dependencies.forEach((dep: any) => {
+    report.dependencies.forEach((dep: PackageMetadata) => {
       let line = `  ${chalk.cyan(dep.name)} (${dep.version || 'unknown'})`;
       if (dep.status) {
         line += ` - ${chalk.yellow(dep.status)}`;
@@ -112,7 +116,7 @@ function generateTextReport(report: any): string {
 
     if (report.fixes.autoFixable.length > 0) {
       result += '\n  ' + chalk.green.bold('✓ Auto-fixable:') + '\n';
-      report.fixes.autoFixable.forEach((fix: any, i: number) => {
+      report.fixes.autoFixable.forEach((fix: FixSuggestion, i: number) => {
         result += `    ${i + 1}. ${chalk.cyan(`[${fix.priority}]`)} ${fix.issue}\n`;
         result += `       ${chalk.gray(fix.suggestion)}\n`;
       });
@@ -120,7 +124,7 @@ function generateTextReport(report: any): string {
 
     if (report.fixes.manualReviewRequired.length > 0) {
       result += '\n  ' + chalk.yellow.bold('⚠ Manual review required:') + '\n';
-      report.fixes.manualReviewRequired.forEach((fix: any, i: number) => {
+      report.fixes.manualReviewRequired.forEach((fix: FixSuggestion, i: number) => {
         result += `    ${i + 1}. ${chalk.cyan(`[${fix.priority}]`)} ${fix.issue}\n`;
         result += `       ${chalk.gray(fix.suggestion)}\n`;
       });
@@ -130,7 +134,7 @@ function generateTextReport(report: any): string {
   if (report.migrationPlan.length > 0) {
     result += '\n' + chalk.bold('Migration Plan:') + '\n';
     result += '-'.repeat(60) + '\n';
-    report.migrationPlan.forEach((step: any) => {
+    report.migrationPlan.forEach((step: MigrationStep) => {
       const priorityColor = step.priority === 'high' ? chalk.red : step.priority === 'medium' ? chalk.yellow : chalk.blue;
       result += `  ${chalk.bold(`Step ${step.step}:`)} ${step.title}\n`;
       result += `     ${priorityColor(`[${step.priority}]`)} ${step.description}\n`;

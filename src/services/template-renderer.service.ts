@@ -1,18 +1,43 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { UnifiedReport } from './ng-metrics-engine.service';
+import { PackageMetadata } from './package-scanner.service';
+import { FileAnalysisResult, CodeIssue } from './code-analysis.service';
+import { GroupedSuggestions, FixSuggestion } from './fix-suggestion.service';
+import { MigrationStep } from './migration-advisor.service';
 
-export interface TemplateData {
-  [key: string]: string | number | boolean | object | undefined;
-}
+type HealthLevel = 'excellent' | 'good' | 'warning' | 'critical';
+type IssueType = 'deprecated_api' | 'anti_pattern' | 'rxjs_issue' | 'security_issue';
+type PriorityLevel = 'high' | 'medium' | 'low';
 
 export class TemplateRendererService {
   private static readonly TEMPLATES_DIR = path.join(__dirname, '../templates');
+
+  private static readonly LEVEL_COLORS: Record<HealthLevel, string> = {
+    excellent: '#10b981',
+    good: '#3b82f6',
+    warning: '#f59e0b',
+    critical: '#ef4444'
+  };
+
+  private static readonly TYPE_COLORS: Record<IssueType, string> = {
+    deprecated_api: '#ef4444',
+    anti_pattern: '#f59e0b',
+    rxjs_issue: '#a855f7',
+    security_issue: '#dc2626'
+  };
+
+  private static readonly PRIORITY_COLORS: Record<PriorityLevel, string> = {
+    high: '#ef4444',
+    medium: '#f59e0b',
+    low: '#3b82f6'
+  };
 
   /**
    * Renders an HTML template with the provided data.
    * Loads the template file and replaces {{placeholders}} with corresponding data.
    */
-  public renderReportTemplate(data: any): string {
+  public renderReportTemplate(data: UnifiedReport): string {
     const templatePath = path.join(TemplateRendererService.TEMPLATES_DIR, 'report.template.html');
     
     if (!fs.existsSync(templatePath)) {
@@ -21,43 +46,18 @@ export class TemplateRendererService {
 
     let template = fs.readFileSync(templatePath, 'utf8');
 
-    const levelColors: Record<string, string> = {
-      excellent: '#10b981',
-      good: '#3b82f6',
-      warning: '#f59e0b',
-      critical: '#ef4444'
-    };
-
-    const typeColors: Record<string, string> = {
-      deprecated_api: '#ef4444',
-      anti_pattern: '#f59e0b',
-      rxjs_issue: '#a855f7',
-      security_issue: '#dc2626'
-    };
-
-    const priorityColors: Record<string, string> = {
-      high: '#ef4444',
-      medium: '#f59e0b',
-      low: '#3b82f6'
-    };
-
     // Render top-level placeholders
+    const level = data.projectHealth.level as HealthLevel;
     template = this.replacePlaceholder(template, 'score', data.projectHealth.score);
-    template = this.replacePlaceholder(template, 'level', data.projectHealth.level);
-    template = this.replacePlaceholder(template, 'levelColor', levelColors[data.projectHealth.level] || '#3b82f6');
+    template = this.replacePlaceholder(template, 'level', level);
+    template = this.replacePlaceholder(template, 'levelColor', TemplateRendererService.LEVEL_COLORS[level] || '#3b82f6');
     template = this.replacePlaceholder(template, 'summary', data.summary);
     template = this.replacePlaceholder(template, 'generatedAt', new Date().toLocaleString());
 
-    // Render dependencies section
+    // Render sections
     template = this.renderDependenciesSection(template, data.dependencies);
-
-    // Render code issues section
-    template = this.renderCodeIssuesSection(template, data.codeIssues, typeColors);
-
-    // Render fixes section
-    template = this.renderFixesSection(template, data.fixes, priorityColors);
-
-    // Render migration section
+    template = this.renderCodeIssuesSection(template, data.codeIssues);
+    template = this.renderFixesSection(template, data.fixes);
     template = this.renderMigrationSection(template, data.migrationPlan);
 
     return template;
@@ -74,13 +74,13 @@ export class TemplateRendererService {
   /**
    * Renders the dependencies section of the template.
    */
-  private renderDependenciesSection(template: string, dependencies: any[]): string {
+  private renderDependenciesSection(template: string, dependencies: PackageMetadata[]): string {
     if (dependencies.length === 0) {
       return this.replacePlaceholder(template, 'dependenciesSection', '');
     }
 
     const dependenciesHtml = dependencies
-      .map((dep: any) => `
+      .map((dep: PackageMetadata) => `
         <div class="card">
           <div class="card-title">${this.escapeHtml(dep.name)}</div>
           <div class="card-version">${this.escapeHtml(dep.version || 'unknown')}</div>
@@ -104,22 +104,25 @@ export class TemplateRendererService {
   /**
    * Renders the code issues section of the template.
    */
-  private renderCodeIssuesSection(template: string, codeIssues: any[], typeColors: Record<string, string>): string {
+  private renderCodeIssuesSection(template: string, codeIssues: FileAnalysisResult[]): string {
     if (codeIssues.length === 0) {
       return this.replacePlaceholder(template, 'codeIssuesSection', '');
     }
 
     const issuesHtml = codeIssues
-      .map((fileResult: any) => {
+      .map((fileResult: FileAnalysisResult) => {
         const fileIssuesHtml = fileResult.issues
-          .map((issue: any) => `
-            <div class="issue-item" style="border-left-color: ${typeColors[issue.type] || '#3b82f6'}">
-              <span class="issue-type" style="background: ${typeColors[issue.type] || '#3b82f6'}">${this.escapeHtml(issue.type)}</span>
-              <div class="issue-message">${this.escapeHtml(issue.message)}</div>
-              ${issue.line ? `<div class="issue-line">Line ${issue.line}</div>` : ''}
-              ${issue.suggestion ? `<div class="issue-suggestion">💡 ${this.escapeHtml(issue.suggestion)}</div>` : ''}
-            </div>
-          `)
+          .map((issue: CodeIssue) => {
+            const type = issue.type as IssueType;
+            return `
+              <div class="issue-item" style="border-left-color: ${TemplateRendererService.TYPE_COLORS[type] || '#3b82f6'}">
+                <span class="issue-type" style="background: ${TemplateRendererService.TYPE_COLORS[type] || '#3b82f6'}">${this.escapeHtml(issue.type)}</span>
+                <div class="issue-message">${this.escapeHtml(issue.message)}</div>
+                ${issue.line ? `<div class="issue-line">Line ${issue.line}</div>` : ''}
+                ${issue.suggestion ? `<div class="issue-suggestion">💡 ${this.escapeHtml(issue.suggestion)}</div>` : ''}
+              </div>
+            `;
+          })
           .join('');
 
         return `
@@ -144,7 +147,7 @@ export class TemplateRendererService {
   /**
    * Renders the fixes section of the template.
    */
-  private renderFixesSection(template: string, fixes: any, priorityColors: Record<string, string>): string {
+  private renderFixesSection(template: string, fixes: GroupedSuggestions): string {
     const hasFixes = fixes.autoFixable.length > 0 || fixes.manualReviewRequired.length > 0;
     
     if (!hasFixes) {
@@ -157,13 +160,16 @@ export class TemplateRendererService {
       fixesHtml += `
         <div class="fix-section">
           <div class="fix-header">✓ Auto-fixable</div>
-          ${fixes.autoFixable.map((fix: any, i: number) => `
-            <div class="fix-item">
-              <span class="fix-priority" style="background: ${priorityColors[fix.priority] || '#3b82f6'}">${this.escapeHtml(fix.priority)}</span>
-              <div class="fix-issue">${i + 1}. ${this.escapeHtml(fix.issue)}</div>
-              <div class="fix-suggestion">${this.escapeHtml(fix.suggestion)}</div>
-            </div>
-          `).join('')}
+          ${fixes.autoFixable.map((fix: FixSuggestion, i: number) => {
+            const priority = fix.priority as PriorityLevel;
+            return `
+              <div class="fix-item">
+                <span class="fix-priority" style="background: ${TemplateRendererService.PRIORITY_COLORS[priority] || '#3b82f6'}">${this.escapeHtml(fix.priority)}</span>
+                <div class="fix-issue">${i + 1}. ${this.escapeHtml(fix.issue)}</div>
+                <div class="fix-suggestion">${this.escapeHtml(fix.suggestion)}</div>
+              </div>
+            `;
+          }).join('')}
         </div>
       `;
     }
@@ -172,13 +178,16 @@ export class TemplateRendererService {
       fixesHtml += `
         <div class="fix-section">
           <div class="fix-header">⚠ Manual review required</div>
-          ${fixes.manualReviewRequired.map((fix: any, i: number) => `
-            <div class="fix-item">
-              <span class="fix-priority" style="background: ${priorityColors[fix.priority] || '#3b82f6'}">${this.escapeHtml(fix.priority)}</span>
-              <div class="fix-issue">${i + 1}. ${this.escapeHtml(fix.issue)}</div>
-              <div class="fix-suggestion">${this.escapeHtml(fix.suggestion)}</div>
-            </div>
-          `).join('')}
+          ${fixes.manualReviewRequired.map((fix: FixSuggestion, i: number) => {
+            const priority = fix.priority as PriorityLevel;
+            return `
+              <div class="fix-item">
+                <span class="fix-priority" style="background: ${TemplateRendererService.PRIORITY_COLORS[priority] || '#3b82f6'}">${this.escapeHtml(fix.priority)}</span>
+                <div class="fix-issue">${i + 1}. ${this.escapeHtml(fix.issue)}</div>
+                <div class="fix-suggestion">${this.escapeHtml(fix.suggestion)}</div>
+              </div>
+            `;
+          }).join('')}
         </div>
       `;
     }
@@ -196,13 +205,13 @@ export class TemplateRendererService {
   /**
    * Renders the migration plan section of the template.
    */
-  private renderMigrationSection(template: string, migrationPlan: any[]): string {
+  private renderMigrationSection(template: string, migrationPlan: MigrationStep[]): string {
     if (migrationPlan.length === 0) {
       return this.replacePlaceholder(template, 'migrationSection', '');
     }
 
     const migrationHtml = migrationPlan
-      .map((step: any) => `
+      .map((step: MigrationStep) => `
         <div class="migration-step">
           <div class="step-number">${step.step}</div>
           <div class="step-content">
