@@ -19,7 +19,7 @@ Keeping Angular projects healthy and up-to-date can be challenging. ng-metrics c
 - **Fix Engine** - safe auto-fixes for tslint, codelyzer, and more
 - **Migration Advisor** - step-by-step migration plans for Angular upgrades
 - **Unified Report** - single command to run all analyses at once
-- **Multiple Output Formats** - export reports in text, JSON, or YAML formats
+- **Multiple Output Formats** - export reports in text, JSON, YAML, or HTML formats
 - **File Export** - save reports to files for documentation or CI/CD integration
 
 ## Installation
@@ -61,10 +61,16 @@ ng-metrics analyze --format json
 ng-metrics analyze --format yaml
 ```
 
+### Export as HTML
+```bash
+ng-metrics analyze --format html
+```
+
 ### Save report to file
 ```bash
 ng-metrics analyze --format json --output report.json
 ng-metrics analyze --format yaml --output report.yaml
+ng-metrics analyze --format html --output report.html
 ```
 
 ### Scan dependencies only
@@ -165,7 +171,7 @@ Generates step-by-step migration plans for:
 |---------|-------------|
 | `ng-metrics` | Run full analysis (default) |
 | `ng-metrics analyze` | Run full analysis and generate unified report |
-| `ng-metrics analyze --format <format>` | Specify output format: text (default), json, yaml |
+| `ng-metrics analyze --format <format>` | Specify output format: text (default), json, yaml, html |
 | `ng-metrics analyze --output <file>` | Save report to file instead of stdout |
 | `ng-metrics scan` | Scan dependencies only |
 | `ng-metrics code` | Analyze TypeScript and template files |
@@ -176,7 +182,6 @@ Generates step-by-step migration plans for:
 ## Roadmap
 
 Future features planned:
-- HTML report generation (`--format html`)
 - CI/CD integration support
 - Custom rule configuration
 - Performance analysis
