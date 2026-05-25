@@ -14,7 +14,7 @@ describe('NgMetricsEngineService', () => {
 
   it('should run full analysis successfully', () => {
     vi.spyOn(fs, 'existsSync').mockReturnValue(true);
-    vi.spyOn(fs, 'readFileSync').mockImplementation((path: any) => {
+    vi.spyOn(fs, 'readFileSync').mockImplementation((path: string | fs.PathLike) => {
       if (path.toString().endsWith('package.json')) {
         return JSON.stringify({
           dependencies: {

@@ -15,10 +15,10 @@ describe('CodeAnalysisService', () => {
   it('should detect OnPush missing and direct window references in TS files', () => {
     vi.spyOn(fs, 'existsSync').mockReturnValue(true);
     // Mock file scanner returning one file
-    vi.spyOn(fs, 'readdirSync').mockReturnValue(['component.ts'] as any);
+    vi.spyOn(fs, 'readdirSync').mockReturnValue(['component.ts'] as unknown as string[]);
     vi.spyOn(fs, 'statSync').mockReturnValue({
       isDirectory: () => false
-    } as any);
+    } as unknown as fs.Stats);
 
     const tsContent = `
 import { Component } from '@angular/core';
@@ -52,10 +52,10 @@ export class TestComponent {
 
   it('should detect [innerHTML] and structural directives in HTML files', () => {
     vi.spyOn(fs, 'existsSync').mockReturnValue(true);
-    vi.spyOn(fs, 'readdirSync').mockReturnValue(['template.html'] as any);
+    vi.spyOn(fs, 'readdirSync').mockReturnValue(['template.html'] as unknown as string[]);
     vi.spyOn(fs, 'statSync').mockReturnValue({
       isDirectory: () => false
-    } as any);
+    } as unknown as fs.Stats);
 
     const htmlContent = `
 <div *ngIf="show">

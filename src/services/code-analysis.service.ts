@@ -1,17 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-
-export interface CodeIssue {
-  type: 'deprecated_api' | 'anti_pattern' | 'rxjs_issue' | 'security_issue';
-  message: string;
-  line?: number;
-  suggestion?: string;
-}
-
-export interface FileAnalysisResult {
-  file: string;
-  issues: CodeIssue[];
-}
+import type { CodeIssue, FileAnalysisResult } from '../types';
 
 export class CodeAnalysisService {
   /**

@@ -1,16 +1,4 @@
-import { HealthScore } from './risk-analysis.service';
-import { ScanResult } from './package-scanner.service';
-
-export interface FixSuggestion {
-  issue: string;
-  suggestion: string;
-  priority: 'high' | 'medium' | 'low';
-}
-
-export interface GroupedSuggestions {
-  autoFixable: FixSuggestion[];
-  manualReviewRequired: FixSuggestion[];
-}
+import type { HealthScore, ScanResult, FixSuggestion, GroupedSuggestions } from '../types';
 
 export class FixSuggestionService {
   public generate(healthScore: HealthScore, scanResult: ScanResult): GroupedSuggestions {

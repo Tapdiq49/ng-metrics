@@ -1,23 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-
-interface PackageJson {
-  dependencies?: Record<string, string>;
-  devDependencies?: Record<string, string>;
-  [key: string]: unknown;
-}
-
-export interface FixChange {
-  type: string;
-  package: string;
-  before: string;
-  after: string;
-}
-
-export interface FixResult {
-  applied: boolean;
-  changes: FixChange[];
-}
+import type { FixChange, FixResult, PackageJson } from '../types';
 
 export class FixEngineService {
   private static readonly SAFE_TO_REMOVE = ['tslint', 'codelyzer'];

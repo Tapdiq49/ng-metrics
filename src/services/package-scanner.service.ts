@@ -1,20 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-
-export interface PackageMetadata {
-  name: string;
-  version?: string;
-  status?: string;
-  recommendation?: string;
-}
-
-export interface ScanResult {
-  metadata: {
-    angularVersion?: string;
-    isAngular21Plus: boolean;
-  };
-  packages: PackageMetadata[];
-}
+import type { PackageMetadata, ScanResult } from '../types';
 
 export class PackageScannerService {
   private static readonly ANGULAR_PACKAGE_PATTERNS = [

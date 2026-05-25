@@ -1,22 +1,18 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { PackageScannerService, ScanResult } from './package-scanner.service';
-import { RiskAnalysisService, HealthScore } from './risk-analysis.service';
-import { CodeAnalysisService, FileAnalysisResult } from './code-analysis.service';
-import { FixSuggestionService, GroupedSuggestions } from './fix-suggestion.service';
-import { MigrationAdvisorService, MigrationStep } from './migration-advisor.service';
-
-export interface UnifiedReport {
-  projectHealth: {
-    score: number;
-    level: string;
-  };
-  dependencies: ScanResult['packages'];
-  codeIssues: FileAnalysisResult[];
-  fixes: GroupedSuggestions;
-  migrationPlan: MigrationStep[];
-  summary: string;
-}
+import { PackageScannerService } from './package-scanner.service';
+import { RiskAnalysisService } from './risk-analysis.service';
+import { CodeAnalysisService } from './code-analysis.service';
+import { FixSuggestionService } from './fix-suggestion.service';
+import { MigrationAdvisorService } from './migration-advisor.service';
+import type { 
+  ScanResult, 
+  HealthScore, 
+  FileAnalysisResult, 
+  GroupedSuggestions, 
+  MigrationStep,
+  UnifiedReport
+} from '../types';
 
 export class NgMetricsEngineService {
   /**

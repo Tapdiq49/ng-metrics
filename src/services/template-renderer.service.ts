@@ -1,10 +1,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { UnifiedReport } from './ng-metrics-engine.service';
-import { PackageMetadata } from './package-scanner.service';
-import { FileAnalysisResult, CodeIssue } from './code-analysis.service';
-import { GroupedSuggestions, FixSuggestion } from './fix-suggestion.service';
-import { MigrationStep } from './migration-advisor.service';
+import type { 
+  UnifiedReport, 
+  PackageMetadata, 
+  FileAnalysisResult, 
+  CodeIssue, 
+  GroupedSuggestions, 
+  FixSuggestion, 
+  MigrationStep 
+} from '../types';
 
 type HealthLevel = 'excellent' | 'good' | 'warning' | 'critical';
 type IssueType = 'deprecated_api' | 'anti_pattern' | 'rxjs_issue' | 'security_issue';

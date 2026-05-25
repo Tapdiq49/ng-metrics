@@ -4,12 +4,15 @@ import ora from 'ora';
 import * as fs from 'fs';
 import * as path from 'path';
 import { stringify } from 'yaml';
-import { NgMetricsEngineService, UnifiedReport } from '../services/ng-metrics-engine.service';
+import { NgMetricsEngineService } from '../services/ng-metrics-engine.service';
 import { TemplateRendererService } from '../services/template-renderer.service';
-import { PackageMetadata } from '../services/package-scanner.service';
-import { FileAnalysisResult, CodeIssue } from '../services/code-analysis.service';
-import { GroupedSuggestions, FixSuggestion } from '../services/fix-suggestion.service';
-import { MigrationStep } from '../services/migration-advisor.service';
+import type { 
+  UnifiedReport, 
+  PackageMetadata, 
+  FileAnalysisResult, 
+  FixSuggestion, 
+  MigrationStep 
+} from '../types';
 
 export const analyzeCommand = new Command('analyze')
   .description('Run full analysis and generate unified report')

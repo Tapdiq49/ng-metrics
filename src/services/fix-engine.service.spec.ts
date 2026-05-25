@@ -13,7 +13,7 @@ describe('FixEngineService', () => {
   });
 
   it('should remove risky packages from package.json', () => {
-    vi.spyOn(fs, 'existsSync').mockImplementation((p: any) => {
+    vi.spyOn(fs, 'existsSync').mockImplementation((p: string | fs.PathLike) => {
       return p.toString().endsWith('package.json');
     });
     vi.spyOn(fs, 'readFileSync').mockReturnValue(JSON.stringify({
@@ -37,7 +37,7 @@ describe('FixEngineService', () => {
   it('should auto-fix ViewChild and toPromise in source files', () => {
     vi.spyOn(fs, 'existsSync').mockReturnValue(true);
     // Mock package.json exists but has no risky packages
-    vi.spyOn(fs, 'readFileSync').mockImplementation((path: any) => {
+    vi.spyOn(fs, 'readFileSync').mockImplementation((path: string | fs.PathLike) => {
       if (path.toString().endsWith('package.json')) {
         return JSON.stringify({ dependencies: {} });
       }
@@ -48,19 +48,19 @@ import { Observable } from 'rxjs';
 
 @Component({ selector: 'test' })
 export class Test {
-  @ViewChild('myRef', { static: true }) ref: any;
+  @ViewChild('myRef', { static: true }) ref: unknown;
 
-  getData(obs: Observable<any>) {
+  getData(obs: Observable<unknown>) {
     return obs.toPromise();
   }
 }
       `;
     });
 
-    vi.spyOn(fs, 'readdirSync').mockReturnValue(['component.ts'] as any);
+    vi.spyOn(fs, 'readdirSync').mockReturnValue(['component.ts'] as unknown as string[]);
     vi.spyOn(fs, 'statSync').mockReturnValue({
       isDirectory: () => false
-    } as any);
+    } as unknown as fs.Stats);
 
     const writeSpy = vi.spyOn(fs, 'writeFileSync').mockImplementation(() => {});
 

@@ -1,10 +1,4 @@
-import { ScanResult, PackageMetadata } from './package-scanner.service';
-
-export interface HealthScore {
-  score: number;
-  level: 'excellent' | 'good' | 'warning' | 'critical';
-  issues: string[];
-}
+import type { ScanResult, PackageMetadata, HealthScore } from '../types';
 
 export class RiskAnalysisService {
   private static readonly SCORE_WEIGHTS = {

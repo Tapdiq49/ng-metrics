@@ -1,12 +1,4 @@
-import { ScanResult } from './package-scanner.service';
-import { FileAnalysisResult } from './code-analysis.service';
-
-export interface MigrationStep {
-  step: number;
-  title: string;
-  description: string;
-  priority: 'high' | 'medium' | 'low';
-}
+import type { ScanResult, FileAnalysisResult, MigrationStep } from '../types';
 
 export class MigrationAdvisorService {
   public advise(scanResult: ScanResult, codeAnalysisResults: FileAnalysisResult[]): MigrationStep[] {
