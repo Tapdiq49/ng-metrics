@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { CodeAnalysisService } from '../services/code-analysis.service';
 import { PackageScannerService } from '../services/package-scanner.service';
+import { ConfigService } from '../services/config.service';
 
 export const auditCommand = new Command('audit')
   .description('Audit the project for security issues, XSS risks, and unsafe practices')
@@ -19,7 +20,9 @@ export const auditCommand = new Command('audit')
       );
 
       // 2. Code Security Scan
-      const codeAnalyzer = new CodeAnalysisService();
+      const configService = new ConfigService();
+      const config = configService.load(process.cwd());
+      const codeAnalyzer = new CodeAnalysisService(config);
       const codeResults = codeAnalyzer.analyze(process.cwd(), options.dir);
 
       // Filter only security issues

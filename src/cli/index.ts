@@ -6,6 +6,7 @@ import { fixCommand } from '../commands/fix';
 import { codeCommand } from '../commands/code';
 import { analyzeCommand } from '../commands/analyze';
 import { auditCommand } from '../commands/audit';
+import { initCommand } from '../commands/init';
 
 const program = new Command();
 
@@ -13,6 +14,7 @@ program
   .name('ng-metrics')
   .description('CLI tool for Angular metrics')
   .version('1.0.0')
+  .addCommand(initCommand)
   .addCommand(scanCommand)
   .addCommand(fixCommand)
   .addCommand(codeCommand)

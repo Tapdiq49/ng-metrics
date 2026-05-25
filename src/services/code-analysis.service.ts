@@ -1,8 +1,30 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { CodeIssue, FileAnalysisResult } from '../types';
+import type { CodeIssue, FileAnalysisResult, Config } from '../types';
 
 export class CodeAnalysisService {
+  private config: Config;
+
+  constructor(config?: Config) {
+    this.config = config || {
+      rules: {
+        viewChildStatic: true,
+        toPromise: true,
+        httpModule: true,
+        changeDetectionOnPush: true,
+        windowDocumentReference: true,
+        nativeElementManipulation: true,
+        rxjsMemoryLeak: true,
+        nestedSubscriptions: true,
+        legacyStructuralDirectives: true,
+        ngForTrackBy: true,
+        forTrackByIndex: true,
+        innerHtmlBinding: true,
+        bypassSecurityTrust: true
+      }
+    };
+  }
+
   /**
    * Performs code analysis on all TypeScript (.ts) and HTML template files
    * in the specified source directory, looking for anti-patterns, deprecations, and security risks.
@@ -13,9 +35,7 @@ export class CodeAnalysisService {
    */
   public analyze(projectPath: string = process.cwd(), customSrcDir?: string): FileAnalysisResult[] {
     const results: FileAnalysisResult[] = [];
-    // Resolve srcDir using path.resolve so that both relative (e.g. 'src-test') and 
-    // absolute paths (e.g. 'C:\repos\ERUSUM\app-frontend\src') are correctly supported.
-    const srcDir = customSrcDir ? path.resolve(projectPath, customSrcDir) : path.resolve(projectPath, 'src');
+    const srcDir = customSrcDir ? path.resolve(projectPath, customSrcDir) : path.resolve(projectPath, this.config.srcDir || 'src');
 
     if (!fs.existsSync(srcDir)) {
       return results;
@@ -24,6 +44,9 @@ export class CodeAnalysisService {
     const files = this.scanDirectory(srcDir);
 
     for (const file of files) {
+      if (this.shouldExcludeFile(file, projectPath)) {
+        continue;
+      }
       const issues = this.analyzeFile(file);
       if (issues.length > 0) {
         results.push({ file, issues });
@@ -31,6 +54,19 @@ export class CodeAnalysisService {
     }
 
     return results;
+  }
+
+  private shouldExcludeFile(filePath: string, projectPath: string): boolean {
+    if (!this.config.exclude || this.config.exclude.length === 0) {
+      return false;
+    }
+    const relativePath = path.relative(projectPath, filePath);
+    return this.config.exclude.some(excludePattern => {
+      if (excludePattern.endsWith('/')) {
+        return relativePath.startsWith(excludePattern);
+      }
+      return relativePath.includes(excludePattern);
+    });
   }
 
   /**
@@ -89,7 +125,7 @@ export class CodeAnalysisService {
     const content = lines.join('\n');
 
     // Check Component ChangeDetectionStrategy.OnPush
-    if (content.includes('@Component') && !content.includes('ChangeDetectionStrategy.OnPush')) {
+    if (this.config.rules?.changeDetectionOnPush && content.includes('@Component') && !content.includes('ChangeDetectionStrategy.OnPush')) {
       const compIndex = lines.findIndex(l => l.includes('@Component'));
       issues.push({
         type: 'anti_pattern',
@@ -100,23 +136,25 @@ export class CodeAnalysisService {
     }
 
     // Check RxJS Subscription Memory Leak
-    const hasSubscribe = content.includes('.subscribe(');
-    const hasUnsubscribe = content.includes('.unsubscribe()') || content.includes('takeUntil') || content.includes('first(') || content.includes('take(1)');
-    if (hasSubscribe && !hasUnsubscribe) {
-      const subIndex = lines.findIndex(l => l.includes('.subscribe('));
-      issues.push({
-        type: 'rxjs_issue',
-        message: 'Potential memory leak: active subscription found without takeUntil, take(1), first(), or unsubscribe()',
-        line: subIndex !== -1 ? subIndex + 1 : undefined,
-        suggestion: "Clean up the subscription using the 'takeUntil' operator with a destroy subject, or store it and call '.unsubscribe()' in ngOnDestroy()."
-      });
+    if (this.config.rules?.rxjsMemoryLeak) {
+      const hasSubscribe = content.includes('.subscribe(');
+      const hasUnsubscribe = content.includes('.unsubscribe()') || content.includes('takeUntil') || content.includes('first(') || content.includes('take(1)');
+      if (hasSubscribe && !hasUnsubscribe) {
+        const subIndex = lines.findIndex(l => l.includes('.subscribe('));
+        issues.push({
+          type: 'rxjs_issue',
+          message: 'Potential memory leak: active subscription found without takeUntil, take(1), first(), or unsubscribe()',
+          line: subIndex !== -1 ? subIndex + 1 : undefined,
+          suggestion: "Clean up the subscription using the 'takeUntil' operator with a destroy subject, or store it and call '.unsubscribe()' in ngOnDestroy()."
+        });
+      }
     }
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const lineNumber = i + 1;
 
-      if (line.includes('.toPromise()')) {
+      if (this.config.rules?.toPromise && line.includes('.toPromise()')) {
         issues.push({
           type: 'deprecated_api',
           message: 'toPromise() is deprecated - use firstValueFrom or lastValueFrom from rxjs',
@@ -125,7 +163,7 @@ export class CodeAnalysisService {
         });
       }
 
-      if (line.includes('HttpModule')) {
+      if (this.config.rules?.httpModule && line.includes('HttpModule')) {
         issues.push({
           type: 'deprecated_api',
           message: 'HttpModule is deprecated - use HttpClientModule instead',
@@ -134,7 +172,7 @@ export class CodeAnalysisService {
         });
       }
 
-      if (line.includes('@ViewChild') && line.includes('static:')) {
+      if (this.config.rules?.viewChildStatic && line.includes('@ViewChild') && line.includes('static:')) {
         issues.push({
           type: 'deprecated_api',
           message: '@ViewChild static:true is deprecated',
@@ -144,7 +182,7 @@ export class CodeAnalysisService {
       }
 
       // Direct reference to window or document
-      if (/\bwindow\.[a-zA-Z]/.test(line) || /\bdocument\.[a-zA-Z]/.test(line)) {
+      if (this.config.rules?.windowDocumentReference && (/\bwindow\.[a-zA-Z]/.test(line) || /\bdocument\.[a-zA-Z]/.test(line))) {
         issues.push({
           type: 'anti_pattern',
           message: 'Direct reference to window or document detected. Inject DOCUMENT token instead for SSR compatibility',
@@ -154,7 +192,7 @@ export class CodeAnalysisService {
       }
 
       // Direct DOM manipulation via nativeElement
-      if (line.includes('.nativeElement.')) {
+      if (this.config.rules?.nativeElementManipulation && line.includes('.nativeElement.')) {
         issues.push({
           type: 'anti_pattern',
           message: 'Direct DOM manipulation via nativeElement detected. Use Renderer2 instead',
@@ -164,7 +202,7 @@ export class CodeAnalysisService {
       }
 
       // DOM Sanitizer bypass checks (XSS Security risk)
-      if (line.includes('bypassSecurityTrust')) {
+      if (this.config.rules?.bypassSecurityTrust && line.includes('bypassSecurityTrust')) {
         issues.push({
           type: 'security_issue',
           message: 'Bypassing Angular DOM Sanitizer (bypassSecurityTrustXXX) detected. Bypassing security checks can introduce critical XSS vulnerabilities',
@@ -174,7 +212,9 @@ export class CodeAnalysisService {
       }
     }
 
-    issues.push(...this.detectNestedSubscriptions(lines));
+    if (this.config.rules?.nestedSubscriptions) {
+      issues.push(...this.detectNestedSubscriptions(lines));
+    }
 
     return issues;
   }
@@ -233,7 +273,7 @@ export class CodeAnalysisService {
       const line = lines[i];
       const lineNumber = i + 1;
 
-      if (line.includes('*ngIf') || line.includes('*ngFor')) {
+      if (this.config.rules?.legacyStructuralDirectives && (line.includes('*ngIf') || line.includes('*ngFor'))) {
         issues.push({
           type: 'anti_pattern',
           message: 'Legacy structural directive syntax detected - consider migrating to Angular 17+ control flow (@if, @for)',
@@ -242,7 +282,7 @@ export class CodeAnalysisService {
         });
       }
 
-      if (line.includes('*ngFor') && !line.includes('trackBy')) {
+      if (this.config.rules?.ngForTrackBy && line.includes('*ngFor') && !line.includes('trackBy')) {
         issues.push({
           type: 'anti_pattern',
           message: '*ngFor directive is missing trackBy. Consider adding trackBy to improve list rendering performance',
@@ -251,7 +291,7 @@ export class CodeAnalysisService {
         });
       }
 
-      if (line.includes('@for') && (line.includes('track $index') || line.includes('track index'))) {
+      if (this.config.rules?.forTrackByIndex && line.includes('@for') && (line.includes('track $index') || line.includes('track index'))) {
         issues.push({
           type: 'anti_pattern',
           message: 'Discouraged @for tracking by index. Track by unique identifier instead if items can mutate',
@@ -260,7 +300,7 @@ export class CodeAnalysisService {
         });
       }
 
-      if (line.includes('[innerHTML]')) {
+      if (this.config.rules?.innerHtmlBinding && line.includes('[innerHTML]')) {
         issues.push({
           type: 'security_issue',
           message: '[innerHTML] binding detected. This can lead to XSS vulnerabilities if the bound content is not properly sanitized',

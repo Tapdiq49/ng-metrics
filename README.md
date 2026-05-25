@@ -21,6 +21,105 @@ Keeping Angular projects healthy and up-to-date can be challenging. ng-metrics c
 - **Unified Report** - single command to run all analyses at once
 - **Multiple Output Formats** - export reports in text, JSON, YAML, or HTML formats
 - **File Export** - save reports to files for documentation or CI/CD integration
+- **Configuration File Support** - customize behavior with `.ng-metricsrc`, `.ng-metricsrc.json`, or `package.json`
+
+## Configuration
+
+### Quick Start
+
+To create a default configuration file, run:
+
+```bash
+ng-metrics init
+```
+
+This will create `ng-metrics.config.json` with all default settings.
+
+To overwrite an existing configuration file:
+
+```bash
+ng-metrics init --force
+```
+
+### Configuration Files
+
+ng-metrics supports configuration files to customize its behavior. You can use one of the following files:
+
+- `.ng-metricsrc` (JSON format)
+- `.ng-metricsrc.json`
+- `ng-metrics.config.json`
+- `package.json` (under the `ngMetrics` field)
+
+### Example Configuration
+
+**ng-metrics.config.json**:
+```json
+{
+  "srcDir": "src",
+  "exclude": [
+    "node_modules/",
+    "dist/",
+    "src/test/"
+  ],
+  "rules": {
+    "changeDetectionOnPush": true,
+    "legacyStructuralDirectives": true,
+    "ngForTrackBy": true,
+    "toPromise": true,
+    "viewChildStatic": true,
+    "httpModule": true,
+    "windowDocumentReference": true,
+    "nativeElementManipulation": true,
+    "rxjsMemoryLeak": true,
+    "nestedSubscriptions": true,
+    "forTrackByIndex": true,
+    "innerHtmlBinding": true,
+    "bypassSecurityTrust": true
+  },
+  "minHealthScore": 80
+}
+```
+
+**package.json**:
+```json
+{
+  "name": "my-angular-app",
+  "ngMetrics": {
+    "srcDir": "src",
+    "exclude": ["src/testing/"],
+    "rules": {
+      "changeDetectionOnPush": false
+    }
+  }
+}
+```
+
+### Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `srcDir` | string | `src` | Source directory to analyze |
+| `exclude` | string[] | `[]` | Files/directories to exclude from analysis |
+| `rules` | object | All true | Enable/disable specific analysis rules |
+| `minHealthScore` | number | `undefined` | Minimum health score threshold (for CI/CD) |
+
+### Available Rules
+
+| Rule | Description |
+|------|-------------|
+| `viewChildStatic` | Check for deprecated @ViewChild static option |
+| `toPromise` | Check for deprecated RxJS toPromise() |
+| `httpModule` | Check for deprecated HttpModule |
+| `changeDetectionOnPush` | Check for missing ChangeDetectionStrategy.OnPush |
+| `windowDocumentReference` | Check for direct window/document references |
+| `nativeElementManipulation` | Check for direct nativeElement DOM manipulation |
+| `rxjsMemoryLeak` | Check for potential RxJS subscription memory leaks |
+| `nestedSubscriptions` | Check for nested RxJS subscriptions |
+| `legacyStructuralDirectives` | Check for legacy *ngIf/*ngFor directives |
+| `ngForTrackBy` | Check for missing trackBy in *ngFor |
+| `forTrackByIndex` | Check for @for tracking by index |
+| `innerHtmlBinding` | Check for [innerHTML] XSS risk |
+| `bypassSecurityTrust` | Check for DOM sanitizer bypass |
 
 ## Installation
 
@@ -169,6 +268,8 @@ Generates step-by-step migration plans for:
 
 | Command | Description |
 |---------|-------------|
+| `ng-metrics init` | Create default ng-metrics.config.json configuration file |
+| `ng-metrics init --force` | Overwrite existing configuration file |
 | `ng-metrics` | Run full analysis (default) |
 | `ng-metrics analyze` | Run full analysis and generate unified report |
 | `ng-metrics analyze --format <format>` | Specify output format: text (default), json, yaml, html |

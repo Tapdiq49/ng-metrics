@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
 import { CodeAnalysisService } from '../services/code-analysis.service';
+import { ConfigService } from '../services/config.service';
 
 export const codeCommand = new Command('code')
   .description('Analyze Angular TypeScript and template files')
@@ -10,7 +11,9 @@ export const codeCommand = new Command('code')
     const spinner = ora('Analyzing code...').start();
 
     try {
-      const analyzer = new CodeAnalysisService();
+      const configService = new ConfigService();
+      const config = configService.load(process.cwd());
+      const analyzer = new CodeAnalysisService(config);
       const results = analyzer.analyze(process.cwd(), options.dir);
 
       spinner.succeed(chalk.green('Code analysis completed!'));

@@ -5,9 +5,16 @@ import { RiskAnalysisService } from './risk-analysis.service';
 import { CodeAnalysisService } from './code-analysis.service';
 import { FixSuggestionService } from './fix-suggestion.service';
 import { MigrationAdvisorService } from './migration-advisor.service';
-import type { HealthScore, FileAnalysisResult, GroupedSuggestions, MigrationStep, UnifiedReport } from '../types';
+import { ConfigService } from './config.service';
+import type { HealthScore, FileAnalysisResult, GroupedSuggestions, MigrationStep, UnifiedReport, Config } from '../types';
 
 export class NgMetricsEngineService {
+  private configService: ConfigService;
+
+  constructor() {
+    this.configService = new ConfigService();
+  }
+
   /**
    * Climbs up the directory tree starting from startDir until it finds a directory
    * containing a package.json file. Falls back to process.cwd() if none is found.
@@ -48,9 +55,11 @@ export class NgMetricsEngineService {
       resolvedProjectPath = this.findProjectRoot(absoluteSrcDir);
     }
 
+    const config = this.configService.load(resolvedProjectPath);
+
     const packageScanner = new PackageScannerService();
     const riskAnalyzer = new RiskAnalysisService();
-    const codeAnalyzer = new CodeAnalysisService();
+    const codeAnalyzer = new CodeAnalysisService(config);
     const fixSuggestionService = new FixSuggestionService();
     const migrationAdvisor = new MigrationAdvisorService();
 
