@@ -13,7 +13,7 @@ const program = new Command();
 program
   .name('ng-metrics')
   .description('CLI tool for Angular metrics')
-  .version('1.0.0')
+  .version('1.4.1')
   .addCommand(initCommand)
   .addCommand(scanCommand)
   .addCommand(fixCommand)
