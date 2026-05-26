@@ -1,6 +1,12 @@
 # ng-metrics
 
-> Angular project health analyzer - scan, analyze, and improve your Angular codebase
+<a href="https://kofe.al/@tapdig"><img src="https://kofe.al/assets/images/logo/logo.png?v=1.0" width="200" height="50" alt="Alyshov Tapdig"></a>
+
+You can support me here
+
+</br>
+
+&gt; Angular project health analyzer - scan, analyze, and improve your Angular codebase
 
 ## Why ng-metrics?
 
