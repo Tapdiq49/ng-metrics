@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Project, SyntaxKind, ClassDeclaration, MethodDeclaration, Decorator, CallExpression, PropertyAccessExpression, Identifier } from 'ts-morph';
+import { Project, SyntaxKind, ClassDeclaration, Decorator, CallExpression, PropertyAccessExpression, ObjectLiteralExpression } from 'ts-morph';
 import type { CodeIssue, Config } from '../types';
 
 export class AstCodeAnalyzerService {
@@ -61,7 +61,8 @@ export class AstCodeAnalyzerService {
     if (componentDecorator && this.config.rules?.changeDetectionOnPush) {
       const decoratorArg = componentDecorator.getArguments()[0];
       if (decoratorArg && decoratorArg.getKind() === SyntaxKind.ObjectLiteralExpression) {
-        const hasOnPush = decoratorArg.getProperty('changeDetection')?.getText().includes('ChangeDetectionStrategy.OnPush');
+        const objLiteral = decoratorArg as ObjectLiteralExpression;
+        const hasOnPush = objLiteral.getProperty('changeDetection')?.getText().includes('ChangeDetectionStrategy.OnPush');
         if (!hasOnPush) {
           issues.push({
             type: 'anti_pattern',
