@@ -20,6 +20,7 @@ Keeping Angular projects healthy and up-to-date can be challenging. ng-metrics c
 
 - **Dependency Analysis** - scan for Angular packages, deprecated dependencies, and zone.js usage
 - **Code Analysis** - detect deprecated APIs, legacy template syntax, and RxJS bad patterns
+- **Bundle Size Analysis** - analyze your production build bundle sizes, identify large files, and get optimization recommendations
 - **Project Health Score** - 0-100 score with excellent/good/warning/critical levels
 - **Fix Engine** - safe auto-fixes for tslint, codelyzer, and more
 - **Migration Advisor** - step-by-step migration plans for Angular upgrades
@@ -79,7 +80,8 @@ ng-metrics supports configuration files to customize its behavior. You can use o
     "nestedSubscriptions": true,
     "forTrackByIndex": true,
     "innerHtmlBinding": true,
-    "bypassSecurityTrust": true
+    "bypassSecurityTrust": true,
+    "bundleSize": true
   },
   "useAst": false,
   "minHealthScore": 80
@@ -127,6 +129,7 @@ ng-metrics supports configuration files to customize its behavior. You can use o
 | `forTrackByIndex` | Check for @for tracking by index |
 | `innerHtmlBinding` | Check for [innerHTML] XSS risk |
 | `bypassSecurityTrust` | Check for DOM sanitizer bypass |
+| `bundleSize` | Enable bundle size analysis (true by default) |
 
 ## Installation
 
@@ -256,6 +259,22 @@ Next Steps:
   - Nested subscriptions → use higher-order operators (switchMap, mergeMap, etc.)
   - Potential memory leaks (active subscriptions without `takeUntil`, `take(1)`, `first()`, or `unsubscribe()`)
 
+## Bundle Size Analysis
+
+ng-metrics automatically analyzes your Angular build bundles (looking in `dist/`, `dist/browser/`, or `build/` directories by default):
+
+- **Total Bundle Size**: Shows the combined size of all your production bundles
+- **Individual File Analysis**: Breaks down each bundle (main, polyfills, styles, vendor, etc.) with their sizes
+- **Warnings for Large Bundles**: Alerts you when main bundle exceeds 1MB or any bundle exceeds 2MB
+- **Optimization Recommendations**: Provides actionable suggestions like:
+  - Using Angular's built-in build optimizer
+  - Implementing lazy loading for feature modules
+  - Tree-shaking unused code and dependencies
+  - Optimizing images and assets
+  - Splitting large vendor bundles
+
+**Note**: Make sure you've built your Angular project for production before running bundle analysis! (e.g., `ng build --configuration production`)
+
 ## Fix Engine
 
 ### Safe Fixes (Auto-applicable)
@@ -293,7 +312,6 @@ Future features planned:
 - CI/CD integration support
 - Custom rule configuration
 - Performance analysis
-- Bundle size checks
 - Multi-project workspace support
 - GitHub Actions integration
 

@@ -70,6 +70,8 @@ export interface UnifiedReport {
   codeIssues: FileAnalysisResult[];
   fixes: GroupedSuggestions;
   migrationPlan: MigrationStep[];
+  /** Bundle size analysis results (if enabled) */
+  bundleAnalysis?: BundleAnalysisResult;
   summary: string;
 }
 
@@ -106,6 +108,8 @@ export interface ConfigRules {
   innerHtmlBinding?: boolean;
   /** Enable/disable DOM sanitizer bypass check */
   bypassSecurityTrust?: boolean;
+  /** Enable/disable bundle size analysis */
+  bundleSize?: boolean;
 }
 
 export interface Config {
@@ -119,6 +123,30 @@ export interface Config {
   minHealthScore?: number;
   /** Use TypeScript AST for more accurate analysis (default: false for backward compatibility) */
   useAst?: boolean;
+}
+
+export interface BundleFile {
+  /** Path to the bundle file */
+  path: string;
+  /** Size of the file in bytes */
+  sizeBytes: number;
+  /** Human-readable size (e.g., 1.2 MB, 500 KB) */
+  sizeHumanReadable: string;
+  /** Type of the bundle file */
+  type: 'main' | 'polyfills' | 'styles' | 'scripts' | 'vendor' | 'chunk' | 'other';
+}
+
+export interface BundleAnalysisResult {
+  /** Total size of all bundles in bytes */
+  totalSizeBytes: number;
+  /** Human-readable total size */
+  totalSizeHumanReadable: string;
+  /** List of analyzed bundle files */
+  files: BundleFile[];
+  /** Warnings about bundle sizes */
+  warnings: string[];
+  /** Recommendations for reducing bundle size */
+  recommendations: string[];
 }
 
 export interface ConfigFile {

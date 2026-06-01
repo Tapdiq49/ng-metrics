@@ -1,6 +1,6 @@
 {
   "name": "ng-metrics",
-  "version": "1.4.1",
+  "version": "1.6.0",
   "description": "CLI tool for Angular metrics",
   "repository": {
     "type": "git",
@@ -32,7 +32,8 @@
     "cli",
     "code-analysis",
     "static-analysis",
-    "health-score"
+    "health-score",
+    "bundle-analysis"
   ],
   "author": "",
   "license": "ISC",
