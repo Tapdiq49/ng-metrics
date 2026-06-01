@@ -11,11 +11,23 @@ describe('NgMetricsEngineService', () => {
     // ARRANGE (setup)
     service = new NgMetricsEngineService();
     vi.clearAllMocks();
+    
+    // Mock all necessary fs functions
+    vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+    vi.spyOn(fs, 'readdirSync').mockReturnValue([]);
+    vi.spyOn(fs, 'statSync').mockReturnValue({
+      isDirectory: () => false,
+      isFile: () => true
+    } as unknown as fs.Stats);
   });
 
   it('should run full analysis successfully', () => {
     // ARRANGE
-    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    // Make package.json exist
+    vi.spyOn(fs, 'existsSync').mockImplementation((p) => {
+      const pathStr = p as string;
+      return pathStr.endsWith('package.json');
+    });
 
     vi.spyOn(fs, 'readFileSync').mockImplementation((path) => {
       const p = path.toString();
@@ -28,8 +40,6 @@ describe('NgMetricsEngineService', () => {
           })
         : '';
     });
-
-    vi.spyOn(fs, 'readdirSync').mockReturnValue([]);
 
     // ACT
     const report = service.analyze();

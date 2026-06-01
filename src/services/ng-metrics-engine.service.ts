@@ -6,6 +6,7 @@ import { CodeAnalysisService } from './code-analysis.service';
 import { FixSuggestionService } from './fix-suggestion.service';
 import { MigrationAdvisorService } from './migration-advisor.service';
 import { ConfigService } from './config.service';
+import { BundleAnalyzerService } from './bundle-analyzer.service';
 import type { HealthScore, FileAnalysisResult, GroupedSuggestions, MigrationStep, UnifiedReport, Config } from '../types';
 
 export class NgMetricsEngineService {
@@ -62,14 +63,21 @@ export class NgMetricsEngineService {
     const codeAnalyzer = new CodeAnalysisService(config);
     const fixSuggestionService = new FixSuggestionService();
     const migrationAdvisor = new MigrationAdvisorService();
+    const bundleAnalyzer = new BundleAnalyzerService(config);
 
     const scanResult = packageScanner.scan(resolvedProjectPath);
     const healthScore = riskAnalyzer.analyze(scanResult);
     const codeIssues = codeAnalyzer.analyze(resolvedProjectPath, customSrcDir);
     const fixSuggestions = fixSuggestionService.generate(healthScore, scanResult);
     const migrationPlan = migrationAdvisor.advise(scanResult, codeIssues);
+    
+    // Run bundle analysis if enabled in config
+    let bundleAnalysis;
+    if (config.rules?.bundleSize !== false) {
+      bundleAnalysis = bundleAnalyzer.analyze(resolvedProjectPath);
+    }
 
-    const summary = this.generateSummary(healthScore, codeIssues, fixSuggestions, migrationPlan);
+    const summary = this.generateSummary(healthScore, codeIssues, fixSuggestions, migrationPlan, bundleAnalysis);
 
     return {
       projectHealth: {
@@ -80,6 +88,7 @@ export class NgMetricsEngineService {
       codeIssues,
       fixes: fixSuggestions,
       migrationPlan,
+      bundleAnalysis,
       summary
     };
   }
@@ -88,7 +97,8 @@ export class NgMetricsEngineService {
     healthScore: HealthScore, 
     codeIssues: FileAnalysisResult[], 
     fixSuggestions: GroupedSuggestions, 
-    migrationPlan: MigrationStep[]
+    migrationPlan: MigrationStep[],
+    bundleAnalysis?: { totalSizeHumanReadable?: string } | null
   ): string {
     const totalIssues = healthScore.issues.length;
     const totalFilesWithIssues = codeIssues.length;
@@ -96,6 +106,9 @@ export class NgMetricsEngineService {
     const totalMigrationSteps = migrationPlan.length;
 
     let summary = `Project Health Score: ${healthScore.score}/100 (${healthScore.level})`;
+    if (bundleAnalysis?.totalSizeHumanReadable) {
+      summary += ` | Total Bundle Size: ${bundleAnalysis.totalSizeHumanReadable}`;
+    }
     if (totalIssues > 0) {
       summary += ` | Found ${totalIssues} issue(s)`;
     }

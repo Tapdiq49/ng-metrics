@@ -138,6 +138,33 @@ function generateTextReport(report: UnifiedReport): string {
     });
   }
 
+  if (report.bundleAnalysis) {
+    result += '\n' + chalk.bold('Bundle Size Analysis:') + '\n';
+    result += '-'.repeat(60) + '\n';
+    result += `  Total Size: ${chalk.cyan(report.bundleAnalysis.totalSizeHumanReadable)}\n`;
+    
+    if (report.bundleAnalysis.files.length > 0) {
+      result += '\n  Bundle Files:\n';
+      report.bundleAnalysis.files.forEach((file) => {
+        result += `    • ${file.path}: ${chalk.cyan(file.sizeHumanReadable)} (${file.type})\n`;
+      });
+    }
+
+    if (report.bundleAnalysis.warnings.length > 0) {
+      result += '\n  Warnings:\n';
+      report.bundleAnalysis.warnings.forEach((warning) => {
+        result += `    ⚠ ${chalk.yellow(warning)}\n`;
+      });
+    }
+
+    if (report.bundleAnalysis.recommendations.length > 0) {
+      result += '\n  Recommendations:\n';
+      report.bundleAnalysis.recommendations.forEach((rec) => {
+        result += `    • ${chalk.gray(rec)}\n`;
+      });
+    }
+  }
+
   result += '\n' + chalk.bold('Full Report (JSON):') + '\n';
   result += '-'.repeat(60) + '\n';
   result += JSON.stringify(report, null, 2) + '\n';
