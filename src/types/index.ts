@@ -117,6 +117,8 @@ export interface Config {
   rules?: ConfigRules;
   /** Minimum health score threshold (for CI/CD) */
   minHealthScore?: number;
+  /** Use TypeScript AST for more accurate analysis (default: false for backward compatibility) */
+  useAst?: boolean;
 }
 
 export interface ConfigFile {

@@ -81,6 +81,7 @@ ng-metrics supports configuration files to customize its behavior. You can use o
     "innerHtmlBinding": true,
     "bypassSecurityTrust": true
   },
+  "useAst": false,
   "minHealthScore": 80
 }
 ```
@@ -107,6 +108,7 @@ ng-metrics supports configuration files to customize its behavior. You can use o
 | `exclude` | string[] | `[]` | Files/directories to exclude from analysis |
 | `rules` | object | All true | Enable/disable specific analysis rules |
 | `minHealthScore` | number | `undefined` | Minimum health score threshold (for CI/CD) |
+| `useAst` | boolean | `false` | Use TypeScript AST for more accurate TypeScript analysis |
 
 ### Available Rules
 

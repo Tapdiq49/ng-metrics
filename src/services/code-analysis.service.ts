@@ -1,9 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { AstCodeAnalyzerService } from './ast-code-analyzer.service';
 import type { CodeIssue, FileAnalysisResult, Config } from '../types';
 
 export class CodeAnalysisService {
   private config: Config;
+  private astAnalyzer?: AstCodeAnalyzerService;
 
   constructor(config?: Config) {
     this.config = config || {
@@ -23,6 +25,10 @@ export class CodeAnalysisService {
         bypassSecurityTrust: true
       }
     };
+    
+    if (this.config.useAst) {
+      this.astAnalyzer = new AstCodeAnalyzerService(this.config);
+    }
   }
 
   /**
@@ -101,9 +107,17 @@ export class CodeAnalysisService {
    */
   private analyzeFile(filePath: string): CodeIssue[] {
     const content = fs.readFileSync(filePath, 'utf8');
-    const issues: CodeIssue[] = [];
     const lines = content.split('\n');
 
+    if (this.astAnalyzer) {
+      if (filePath.endsWith('.ts')) {
+        return this.astAnalyzer.analyzeTypeScriptFile(filePath, content);
+      } else if (filePath.endsWith('.html')) {
+        return this.astAnalyzer.analyzeTemplateFile(filePath, lines);
+      }
+    }
+
+    const issues: CodeIssue[] = [];
     if (filePath.endsWith('.ts')) {
       issues.push(...this.analyzeTypeScript(lines));
     } else if (filePath.endsWith('.html')) {
