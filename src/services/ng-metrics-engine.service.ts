@@ -7,7 +7,7 @@ import { FixSuggestionService } from './fix-suggestion.service';
 import { MigrationAdvisorService } from './migration-advisor.service';
 import { ConfigService } from './config.service';
 import { BundleAnalyzerService } from './bundle-analyzer.service';
-import type { HealthScore, FileAnalysisResult, GroupedSuggestions, MigrationStep, UnifiedReport, Config } from '../types';
+import type { HealthScore, FileAnalysisResult, GroupedSuggestions, MigrationStep, UnifiedReport, Config, BundleAnalysisResult } from '../types';
 
 export class NgMetricsEngineService {
   private configService: ConfigService;
@@ -72,9 +72,10 @@ export class NgMetricsEngineService {
     const migrationPlan = migrationAdvisor.advise(scanResult, codeIssues);
     
     // Run bundle analysis if enabled in config
-    let bundleAnalysis;
+    let bundleAnalysis: BundleAnalysisResult | undefined;
     if (config.rules?.bundleSize !== false) {
-      bundleAnalysis = bundleAnalyzer.analyze(resolvedProjectPath);
+      const analysis = bundleAnalyzer.analyze(resolvedProjectPath);
+      bundleAnalysis = analysis !== null ? analysis : undefined;
     }
 
     const summary = this.generateSummary(healthScore, codeIssues, fixSuggestions, migrationPlan, bundleAnalysis);
