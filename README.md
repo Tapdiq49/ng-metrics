@@ -18,7 +18,8 @@ Keeping Angular projects healthy and up-to-date can be challenging. ng-metrics c
 
 ## Features
 
-- **Dependency Analysis** - scan for Angular packages, deprecated dependencies, and zone.js usage
+- **Dependency Analysis** - Risk Assessment: Penalizes risky/deprecated dependencies (tslint, codelyzer, legacy zone.js).
+- **Dead Code Detection**: Identifies unused components, directives, and pipes and safely removes them.
 - **Code Analysis** - detect deprecated APIs, legacy template syntax, and RxJS bad patterns
 - **Bundle Size Analysis** - analyze your production build bundle sizes, identify large files, and get optimization recommendations
 - **Project Health Score** - 0-100 score with excellent/good/warning/critical levels
@@ -280,7 +281,9 @@ ng-metrics automatically analyzes your Angular build bundles (looking in `dist/`
 ### Safe Fixes (Auto-applicable)
 - Remove `tslint` and `codelyzer` from package dependencies
 - Remove legacy `{ static: true | false }` configurations from `@ViewChild` declarations
-- Automatically migrate RxJS `.toPromise()` calls to `firstValueFrom()` and add the correct `'rxjs'` import if missing
+- Automatically migrate RxJS `toPromise()` to `firstValueFrom()` conversion
+- Dead Code Removal (Deletes unused component/directive/pipe files and cleans up module imports/declarations)
+- *More coming soon!*
 
 ## Migration Advisor
 

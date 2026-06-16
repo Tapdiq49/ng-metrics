@@ -2,7 +2,7 @@ import type { ScanResult, PackageMetadata, HealthScore } from '../types';
 
 export class RiskAnalysisService {
 
-  private static readonly LATEST_ANGULAR_VERSION = 21;
+  private static readonly LATEST_ANGULAR_VERSION = 22;
 
   private static readonly RISKY_PACKAGES = ['tslint', 'codelyzer'];
 

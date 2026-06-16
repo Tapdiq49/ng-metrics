@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { AstCodeAnalyzerService } from './ast-code-analyzer.service';
+import { DeadCodeAnalyzerService } from './dead-code-analyzer.service';
 import type { CodeIssue, FileAnalysisResult, Config } from '../types';
 
 export class CodeAnalysisService {
@@ -56,6 +57,20 @@ export class CodeAnalysisService {
       const issues = this.analyzeFile(file);
       if (issues.length > 0) {
         results.push({ file, issues });
+      }
+    }
+
+    // Run Dead Code Analyzer
+    const deadCodeAnalyzer = new DeadCodeAnalyzerService();
+    const deadCodeResults = deadCodeAnalyzer.analyze(projectPath, customSrcDir || this.config.srcDir || 'src');
+    
+    // Merge dead code results
+    for (const deadCodeFileResult of deadCodeResults) {
+      const existingFileResult = results.find(r => r.file === deadCodeFileResult.file);
+      if (existingFileResult) {
+        existingFileResult.issues.push(...deadCodeFileResult.issues);
+      } else {
+        results.push(deadCodeFileResult);
       }
     }
 

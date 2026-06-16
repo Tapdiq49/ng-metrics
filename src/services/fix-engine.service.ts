@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { FixChange, FixResult, PackageJson } from '../types';
+import { Project, SyntaxKind, Node } from 'ts-morph';
+import type { FixChange, FixResult, PackageJson, FileAnalysisResult } from '../types';
+import { DeadCodeAnalyzerService } from './dead-code-analyzer.service';
 
 export class FixEngineService {
   private static readonly SAFE_TO_REMOVE = ['tslint', 'codelyzer'];
@@ -165,7 +167,102 @@ export class FixEngineService {
       }
     }
 
+    // 3. Fix Dead Code
+    changes.push(...this.removeDeadCode(resolvedProjectPath, customSrcDir, dryRun));
+
     return { applied: !dryRun, changes };
+  }
+
+  private removeDeadCode(projectPath: string, customSrcDir: string | undefined, dryRun: boolean): FixChange[] {
+    const changes: FixChange[] = [];
+    const analyzer = new DeadCodeAnalyzerService();
+    const srcDir = customSrcDir || 'src';
+    const results = analyzer.analyze(projectPath, srcDir);
+
+    const filesToDelete = new Set<string>();
+    const componentsToRemove = new Map<string, string>(); // class name -> file path
+
+    for (const result of results) {
+      for (const issue of result.issues) {
+        if (issue.message.startsWith('Dead Code Detected:') && result.file) {
+          const match = issue.message.match(/'([^']+)'/);
+          if (match) {
+            componentsToRemove.set(match[1], result.file);
+            filesToDelete.add(result.file);
+            // Also queue .html, .scss, .css, .spec.ts
+            const baseName = result.file.replace(/\.ts$/, '');
+            if (fs.existsSync(baseName + '.html')) filesToDelete.add(baseName + '.html');
+            if (fs.existsSync(baseName + '.scss')) filesToDelete.add(baseName + '.scss');
+            if (fs.existsSync(baseName + '.css')) filesToDelete.add(baseName + '.css');
+            if (fs.existsSync(baseName + '.spec.ts')) filesToDelete.add(baseName + '.spec.ts');
+          }
+        }
+      }
+    }
+
+    if (componentsToRemove.size > 0) {
+      const tsProject = new Project({ skipAddingFilesFromTsConfig: true });
+      tsProject.addSourceFilesAtPaths(`${path.resolve(projectPath, srcDir)}/**/*.ts`);
+
+      for (const [className, filePath] of componentsToRemove.entries()) {
+        const file = tsProject.getSourceFile(filePath);
+        if (file) {
+          const classDecl = file.getClass(className);
+          if (classDecl) {
+            const refs = classDecl.findReferencesAsNodes();
+            for (const ref of refs) {
+              const refFile = ref.getSourceFile();
+              if (refFile.getFilePath() !== filePath) {
+                // It's used in another file (like a module), let's remove the import and declaration
+                
+                // Remove from arrays (declarations, exports, etc)
+                const parentArray = ref.getFirstAncestorByKind(SyntaxKind.ArrayLiteralExpression);
+                if (parentArray) {
+                  const elements = parentArray.getElements();
+                  const index = elements.findIndex(e => e.getText() === className);
+                  if (index !== -1) {
+                    if (!dryRun) parentArray.removeElement(index);
+                  }
+                }
+
+                // Remove import declaration
+                const importDecl = refFile.getImportDeclaration(decl => decl.getNamedImports().some(i => i.getName() === className));
+                if (importDecl) {
+                  if (!dryRun) {
+                    const namedImports = importDecl.getNamedImports();
+                    if (namedImports.length === 1) {
+                      importDecl.remove();
+                    } else {
+                      const specifier = namedImports.find(i => i.getName() === className);
+                      if (specifier) specifier.remove();
+                    }
+                  }
+                }
+
+                if (!dryRun) {
+                  refFile.saveSync();
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    for (const file of filesToDelete) {
+      changes.push({
+        type: 'remove',
+        package: path.relative(projectPath, file),
+        before: 'File exists',
+        after: '(deleted as dead code)'
+      });
+
+      if (!dryRun) {
+        fs.unlinkSync(file);
+      }
+    }
+
+    return changes;
   }
 
   private removeUnsafePackages(packageJson: PackageJson): FixChange[] {

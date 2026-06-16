@@ -43,7 +43,7 @@ describe('FixSuggestionService', () => {
       score: 50,
       level: 'warning',
       issues: [
-        'Angular version 18 is 3 versions behind latest (21)'
+        'Angular version 18 is 4 versions behind latest (22)'
       ]
     };
 

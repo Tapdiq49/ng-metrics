@@ -3,6 +3,13 @@ import * as fs from 'fs';
 import { CodeAnalysisService } from './code-analysis.service';
 
 vi.mock('fs');
+vi.mock('./dead-code-analyzer.service', () => {
+  return {
+    DeadCodeAnalyzerService: class {
+      analyze() { return []; }
+    }
+  };
+});
 
 const mockExistsSync = fs.existsSync as Mock;
 const mockReaddirSync = fs.readdirSync as Mock;

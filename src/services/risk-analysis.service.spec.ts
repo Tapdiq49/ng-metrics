@@ -14,11 +14,11 @@ describe('RiskAnalysisService', () => {
     // ARRANGE
     const scanResult: ScanResult = {
       metadata: {
-        angularVersion: '21.0.0',
+        angularVersion: '22.0.0',
         isAngular21Plus: true
       },
       packages: [
-        { name: '@angular/core', version: '^21.0.0' }
+        { name: '@angular/core', version: '^22.0.0' }
       ]
     };
 
@@ -49,7 +49,7 @@ describe('RiskAnalysisService', () => {
     // ASSERT
     expect(health.score).toBeLessThan(100);
     expect(health.issues).toContain(
-      'Angular version 16 is 5 versions behind latest (21)'
+      'Angular version 16 is 6 versions behind latest (22)'
     );
   });
 
@@ -71,7 +71,7 @@ describe('RiskAnalysisService', () => {
     const health = service.analyze(scanResult);
 
     // ASSERT
-    expect(health.score).toBe(75);
-    expect(health.level).toBe('good');
+    expect(health.score).toBe(57);
+    expect(health.level).toBe('warning');
   });
 });
