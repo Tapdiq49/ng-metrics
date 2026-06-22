@@ -5,6 +5,11 @@ export interface PackageMetadata {
   recommendation?: string;
 }
 
+export type HealthLevel = 'excellent' | 'good' | 'warning' | 'critical';
+export type IssueType = 'deprecated_api' | 'anti_pattern' | 'rxjs_issue' | 'security_issue';
+export type PriorityLevel = 'high' | 'medium' | 'low';
+
+
 export interface ScanResult {
   metadata: {
     angularVersion?: string;
@@ -15,12 +20,12 @@ export interface ScanResult {
 
 export interface HealthScore {
   score: number;
-  level: 'excellent' | 'good' | 'warning' | 'critical';
+  level: HealthLevel;
   issues: string[];
 }
 
 export interface CodeIssue {
-  type: 'deprecated_api' | 'anti_pattern' | 'rxjs_issue' | 'security_issue';
+  type: IssueType;
   message: string;
   line?: number;
   suggestion?: string;
@@ -34,7 +39,7 @@ export interface FileAnalysisResult {
 export interface FixSuggestion {
   issue: string;
   suggestion: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: PriorityLevel;
 }
 
 export interface GroupedSuggestions {
@@ -46,7 +51,7 @@ export interface MigrationStep {
   step: number;
   title: string;
   description: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: PriorityLevel;
 }
 
 export interface FixChange {

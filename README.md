@@ -26,7 +26,7 @@ Keeping Angular projects healthy and up-to-date can be challenging. ng-metrics c
 - **Fix Engine** - safe auto-fixes for tslint, codelyzer, and more
 - **Migration Advisor** - step-by-step migration plans for Angular upgrades
 - **Unified Report** - single command to run all analyses at once
-- **Multiple Output Formats** - export reports in text, JSON, YAML, or HTML formats
+- **Multiple Output Formats** - export reports in text, JSON, YAML, or HTML formats (powered by Handlebars)
 - **File Export** - save reports to files for documentation or CI/CD integration
 - **Configuration File Support** - customize behavior with `.ng-metricsrc`, `.ng-metricsrc.json`, or `package.json`
 

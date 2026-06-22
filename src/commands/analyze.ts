@@ -37,7 +37,7 @@ export const analyzeCommand = new Command('analyze')
           break;
         case 'html':
           const renderer = new TemplateRendererService();
-          outputContent = renderer.renderReportTemplate(report);
+          outputContent = await renderer.renderReportTemplate(report);
           break;
         case 'text':
         default:

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import { TemplateRendererService } from './template-renderer.service';
 import type { UnifiedReport } from '../types';
 
-vi.mock('fs');
+vi.mock('fs/promises');
 
 describe('TemplateRendererService', () => {
   let service: TemplateRendererService;
@@ -14,7 +14,7 @@ describe('TemplateRendererService', () => {
     vi.clearAllMocks();
   });
 
-  it('should render report template with all data sections', () => {
+  it('should render report template with all data sections', async () => {
     // ARRANGE
     const mockReport: UnifiedReport = {
       projectHealth: { score: 85, level: 'good' },
@@ -51,14 +51,12 @@ describe('TemplateRendererService', () => {
       ]
     };
 
-    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
-
-    vi.spyOn(fs, 'readFileSync').mockReturnValue(
-      '{{score}} {{level}} {{levelColor}} {{summary}} {{generatedAt}} {{dependenciesSection}} {{codeIssuesSection}} {{fixesSection}} {{migrationSection}}'
+    vi.spyOn(fs, 'readFile').mockResolvedValue(
+      '{{projectHealth.score}} {{projectHealth.level}} {{levelColor projectHealth.level}} {{summary}} {{#each dependencies}}{{name}}{{/each}} {{#each codeIssues}}{{#each issues}}{{message}}{{/each}}{{/each}} {{#each fixes.autoFixable}}{{issue}}{{/each}} {{#each migrationPlan}}{{title}}{{/each}}'
     );
 
     // ACT
-    const result = service.renderReportTemplate(mockReport);
+    const result = await service.renderReportTemplate(mockReport);
 
     // ASSERT
     expect(result).toContain('85');
@@ -71,7 +69,7 @@ describe('TemplateRendererService', () => {
     expect(result).toContain('Update Angular');
   });
 
-  it('should throw error when template file is not found', () => {
+  it('should throw error when template file read fails', async () => {
     // ARRANGE
     const mockReport: UnifiedReport = {
       projectHealth: { score: 85, level: 'good' },
@@ -82,13 +80,13 @@ describe('TemplateRendererService', () => {
       migrationPlan: []
     };
 
-    vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+    vi.spyOn(fs, 'readFile').mockRejectedValue(new Error('File not found'));
 
     // ACT + ASSERT
-    expect(() => service.renderReportTemplate(mockReport)).toThrow();
+    await expect(service.renderReportTemplate(mockReport)).rejects.toThrow();
   });
 
-  it('should render empty dependencies section when no dependencies', () => {
+  it('should not render empty sections when data is empty', async () => {
     // ARRANGE
     const mockReport: UnifiedReport = {
       projectHealth: { score: 85, level: 'good' },
@@ -99,76 +97,17 @@ describe('TemplateRendererService', () => {
       migrationPlan: []
     };
 
-    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
-    vi.spyOn(fs, 'readFileSync').mockReturnValue('{{dependenciesSection}}');
+    vi.spyOn(fs, 'readFile').mockResolvedValue(
+      '{{#if dependencies.length}}Dependencies{{/if}} {{#if codeIssues.length}}Issues{{/if}} {{#if hasFixes}}Fixes{{/if}} {{#if migrationPlan.length}}Migration{{/if}}'
+    );
 
     // ACT
-    const result = service.renderReportTemplate(mockReport);
+    const result = await service.renderReportTemplate(mockReport);
 
     // ASSERT
-    expect(result).not.toContain('Detected Dependencies');
-  });
-
-  it('should render empty code issues section when no issues', () => {
-    // ARRANGE
-    const mockReport: UnifiedReport = {
-      projectHealth: { score: 85, level: 'good' },
-      summary: 'Test',
-      dependencies: [],
-      codeIssues: [],
-      fixes: { autoFixable: [], manualReviewRequired: [] },
-      migrationPlan: []
-    };
-
-    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
-    vi.spyOn(fs, 'readFileSync').mockReturnValue('{{codeIssuesSection}}');
-
-    // ACT
-    const result = service.renderReportTemplate(mockReport);
-
-    // ASSERT
-    expect(result).not.toContain('Code Issues');
-  });
-
-  it('should render empty fixes section when no fixes', () => {
-    // ARRANGE
-    const mockReport: UnifiedReport = {
-      projectHealth: { score: 85, level: 'good' },
-      summary: 'Test',
-      dependencies: [],
-      codeIssues: [],
-      fixes: { autoFixable: [], manualReviewRequired: [] },
-      migrationPlan: []
-    };
-
-    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
-    vi.spyOn(fs, 'readFileSync').mockReturnValue('{{fixesSection}}');
-
-    // ACT
-    const result = service.renderReportTemplate(mockReport);
-
-    // ASSERT
-    expect(result).not.toContain('Fix Suggestions');
-  });
-
-  it('should render empty migration section when no migration plan', () => {
-    // ARRANGE
-    const mockReport: UnifiedReport = {
-      projectHealth: { score: 85, level: 'good' },
-      summary: 'Test',
-      dependencies: [],
-      codeIssues: [],
-      fixes: { autoFixable: [], manualReviewRequired: [] },
-      migrationPlan: []
-    };
-
-    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
-    vi.spyOn(fs, 'readFileSync').mockReturnValue('{{migrationSection}}');
-
-    // ACT
-    const result = service.renderReportTemplate(mockReport);
-
-    // ASSERT
-    expect(result).not.toContain('Migration Plan');
+    expect(result).not.toContain('Dependencies');
+    expect(result).not.toContain('Issues');
+    expect(result).not.toContain('Fixes');
+    expect(result).not.toContain('Migration');
   });
 });
