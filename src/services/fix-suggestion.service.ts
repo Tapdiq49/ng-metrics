@@ -48,9 +48,10 @@ export class FixSuggestionService {
         const current = parseInt(versionMatch[1], 10);
         const latest = parseInt(latestMatch[1], 10);
         suggestionText = `Step-by-step upgrade path from ${current} to ${latest}:\n`;
-        
+
+        let stepNum = 1;
         for (let v = current + 1; v <= latest; v++) {
-          suggestionText += `  1. ng update @angular/core@${v} @angular/cli@${v}\n`;
+          suggestionText += `  ${stepNum++}. ng update @angular/core@${v} @angular/cli@${v}\n`;
         }
       }
 

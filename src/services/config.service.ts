@@ -28,7 +28,8 @@ export class ConfigService {
       innerHtmlBinding: true,
       bypassSecurityTrust: true
     },
-    minHealthScore: undefined
+    minHealthScore: undefined,
+    useAst: false
   };
 
   /**
@@ -55,6 +56,7 @@ export class ConfigService {
           }
 
           if (userConfig) {
+            this.warnUnknownKeys(userConfig, filePath);
             return this.mergeWithDefaults(userConfig);
           }
         } catch (error) {
@@ -63,6 +65,23 @@ export class ConfigService {
       }
     }
     return { ...this.defaultConfig };
+  }
+
+  /** Known top-level config keys — used for typo detection */
+  private static readonly KNOWN_CONFIG_KEYS: ReadonlySet<string> = new Set([
+    'srcDir', 'exclude', 'rules', 'minHealthScore', 'useAst'
+  ]);
+
+  /**
+   * Warns about any top-level keys in userConfig that are not recognised.
+   * Helps users catch typos (e.g. 'rule' instead of 'rules') early.
+   */
+  private warnUnknownKeys(userConfig: Config, filePath: string): void {
+    for (const key of Object.keys(userConfig)) {
+      if (!ConfigService.KNOWN_CONFIG_KEYS.has(key)) {
+        console.warn(`[ng-metrics] Warning: Unknown config key "${key}" in ${filePath}. Valid keys: ${[...ConfigService.KNOWN_CONFIG_KEYS].join(', ')}`);
+      }
+    }
   }
 
   private mergeWithDefaults(userConfig: Config): Config {

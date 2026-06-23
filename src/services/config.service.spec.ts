@@ -50,7 +50,8 @@ describe('ConfigService', () => {
           innerHtmlBinding: true,
           bypassSecurityTrust: true
         },
-        minHealthScore: undefined
+        minHealthScore: undefined,
+        useAst: false
       });
     });
   });

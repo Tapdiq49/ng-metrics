@@ -1,39 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Project, SyntaxKind, Node } from 'ts-morph';
+import { findProjectRoot } from '../utils/project-root';
 import type { FixChange, FixResult, PackageJson, FileAnalysisResult } from '../types';
 import { DeadCodeAnalyzerService } from './dead-code-analyzer.service';
 
 export class FixEngineService {
   private static readonly SAFE_TO_REMOVE = ['tslint', 'codelyzer'];
-
-  /**
-   * Climbs up the directory tree starting from startDir until it finds a directory
-   * containing a package.json file. Falls back to process.cwd() if none is found.
-   */
-  private findProjectRoot(startDir: string): string {
-    let currentDir = path.resolve(startDir);
-    
-    try {
-      if (fs.existsSync(currentDir) && fs.statSync(currentDir).isFile()) {
-        currentDir = path.dirname(currentDir);
-      }
-    } catch (e) {
-      // Ignore
-    }
-
-    while (true) {
-      if (fs.existsSync(path.join(currentDir, 'package.json'))) {
-        return currentDir;
-      }
-      const parentDir = path.dirname(currentDir);
-      if (parentDir === currentDir) {
-        break;
-      }
-      currentDir = parentDir;
-    }
-    return process.cwd();
-  }
 
   /**
    * Recursively scans a directory and lists all TypeScript (.ts) files.
@@ -64,7 +37,7 @@ export class FixEngineService {
     let resolvedProjectPath = projectPath;
     if (customSrcDir) {
       const absoluteSrcDir = path.resolve(projectPath, customSrcDir);
-      resolvedProjectPath = this.findProjectRoot(absoluteSrcDir);
+      resolvedProjectPath = findProjectRoot(absoluteSrcDir);
     }
 
     const packageJsonPath = path.join(resolvedProjectPath, 'package.json');
@@ -112,6 +85,7 @@ export class FixEngineService {
           // Matching: @ViewChild('name', { static: true }) or @ViewChild(Component, { static: false })
           const viewChildRegex = /@ViewChild\(([^,]+),\s*\{\s*static:\s*(?:true|false)\s*\}\)/g;
           if (viewChildRegex.test(modifiedLine)) {
+            viewChildRegex.lastIndex = 0; // reset after .test() to avoid lastIndex drift with /g flag
             modifiedLine = modifiedLine.replace(viewChildRegex, '@ViewChild($1)');
             fileChanged = true;
           }
@@ -120,6 +94,7 @@ export class FixEngineService {
           // Matching: someObservable.toPromise() -> firstValueFrom(someObservable)
           const toPromiseRegex = /([a-zA-Z0-9_$\.\(\)\'\"\/\[\]\-]+)\.toPromise\(\)/g;
           if (toPromiseRegex.test(modifiedLine)) {
+            toPromiseRegex.lastIndex = 0; // reset after .test() to avoid lastIndex drift with /g flag
             // Skip matching string literals of toPromise inside includes()
             if (
               !modifiedLine.includes("'.toPromise()'") &&
@@ -202,7 +177,11 @@ export class FixEngineService {
 
     if (componentsToRemove.size > 0) {
       const tsProject = new Project({ skipAddingFilesFromTsConfig: true });
-      tsProject.addSourceFilesAtPaths(`${path.resolve(projectPath, srcDir)}/**/*.ts`);
+      // Use explicit file enumeration instead of glob to avoid Windows path issues
+      const allTsFiles = this.scanDirectory(path.resolve(projectPath, srcDir));
+      for (const tsFile of allTsFiles) {
+        tsProject.addSourceFileAtPath(tsFile);
+      }
 
       for (const [className, filePath] of componentsToRemove.entries()) {
         const file = tsProject.getSourceFile(filePath);
@@ -258,6 +237,7 @@ export class FixEngineService {
       });
 
       if (!dryRun) {
+        console.warn(`[ng-metrics] Deleting dead code file: ${file}`);
         fs.unlinkSync(file);
       }
     }

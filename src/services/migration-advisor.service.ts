@@ -17,8 +17,16 @@ export class MigrationAdvisorService {
       }
     }
 
-    const hasControlFlowIssues = codeAnalysisResults.some(r => 
-      r.issues.some(i => i.type === 'anti_pattern')
+    const hasControlFlowIssues = codeAnalysisResults.some(r =>
+      r.issues.some(i =>
+        i.type === 'anti_pattern' &&
+        (
+          i.message.toLowerCase().includes('structural directive') ||
+          i.message.includes('control flow') ||
+          i.message.includes('@if') ||
+          i.message.includes('@for')
+        )
+      )
     );
     if (hasControlFlowIssues) {
       steps.push({

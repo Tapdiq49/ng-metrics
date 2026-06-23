@@ -123,7 +123,7 @@ ng-metrics supports configuration files to customize its behavior. You can use o
 | `changeDetectionOnPush` | Check for missing ChangeDetectionStrategy.OnPush |
 | `windowDocumentReference` | Check for direct window/document references |
 | `nativeElementManipulation` | Check for direct nativeElement DOM manipulation |
-| `rxjsMemoryLeak` | Check for potential RxJS subscription memory leaks |
+| `rxjsMemoryLeak` | Check for potential RxJS subscription memory leaks (skips files that already use takeUntil / unsubscribe / take(1) / first()) |
 | `nestedSubscriptions` | Check for nested RxJS subscriptions |
 | `legacyStructuralDirectives` | Check for legacy *ngIf/*ngFor directives |
 | `ngForTrackBy` | Check for missing trackBy in *ngFor |

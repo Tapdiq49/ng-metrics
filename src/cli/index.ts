@@ -8,12 +8,13 @@ import { analyzeCommand } from '../commands/analyze';
 import { auditCommand } from '../commands/audit';
 import { initCommand } from '../commands/init';
 
+const { version } = require('../../package.json') as { version: string };
 const program = new Command();
 
 program
   .name('ng-metrics')
   .description('CLI tool for Angular metrics')
-  .version('1.4.1')
+  .version(version)
   .addCommand(initCommand)
   .addCommand(scanCommand)
   .addCommand(fixCommand)

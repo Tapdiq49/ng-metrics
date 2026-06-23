@@ -97,18 +97,29 @@ export class AstCodeAnalyzerService {
       });
     }
 
-    // Check subscribe() calls for memory leaks
+    // Check subscribe() calls for memory leaks.
+    // Only flag when the file does NOT already use a recognised cleanup pattern
+    // (takeUntil, unsubscribe, take(1), first()) to avoid false positives.
     if (
       this.config.rules?.rxjsMemoryLeak &&
       expression.getKind() === SyntaxKind.PropertyAccessExpression &&
       (expression as PropertyAccessExpression).getName() === 'subscribe'
     ) {
-      issues.push({
-        type: 'rxjs_issue',
-        message: 'Potential memory leak: active subscription found',
-        line: callExpr.getStartLineNumber(),
-        suggestion: "Clean up the subscription using the 'takeUntil' operator with a destroy subject, or store it and call '.unsubscribe()' in ngOnDestroy()."
-      });
+      const sourceFileText = callExpr.getSourceFile().getFullText();
+      const hasCleanup =
+        sourceFileText.includes('takeUntil') ||
+        sourceFileText.includes('.unsubscribe()') ||
+        sourceFileText.includes('take(1)') ||
+        sourceFileText.includes('first()');
+
+      if (!hasCleanup) {
+        issues.push({
+          type: 'rxjs_issue',
+          message: 'Potential memory leak: active subscription found without takeUntil, take(1), first(), or unsubscribe()',
+          line: callExpr.getStartLineNumber(),
+          suggestion: "Clean up the subscription using the 'takeUntil' operator with a destroy subject, or store it and call '.unsubscribe()' in ngOnDestroy()."
+        });
+      }
     }
 
     return issues;

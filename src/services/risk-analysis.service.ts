@@ -2,6 +2,8 @@ import type { ScanResult, PackageMetadata, HealthScore } from '../types';
 
 export class RiskAnalysisService {
 
+  // TODO: Update this constant with each new Angular major release.
+  // Current value reflects Angular 22 (latest as of June 2026).
   private static readonly LATEST_ANGULAR_VERSION = 22;
 
   private static readonly RISKY_PACKAGES = ['tslint', 'codelyzer'];

@@ -41,9 +41,9 @@ export class DeadCodeAnalyzerService {
       const classes = sourceFile.getClasses();
 
       for (const classDecl of classes) {
-        const isComponent = classDecl.getDecorator('Component') !== undefined || classDecl.getDecorators().some(d => d.getName() === 'Component');
-        const isDirective = classDecl.getDecorator('Directive') !== undefined || classDecl.getDecorators().some(d => d.getName() === 'Directive');
-        const isPipe = classDecl.getDecorator('Pipe') !== undefined || classDecl.getDecorators().some(d => d.getName() === 'Pipe');
+        const isComponent = classDecl.getDecorator('Component') !== undefined;
+        const isDirective = classDecl.getDecorator('Directive') !== undefined;
+        const isPipe      = classDecl.getDecorator('Pipe') !== undefined;
 
         if (isComponent || isDirective || isPipe) {
           const typeName = isComponent ? 'Component' : isDirective ? 'Directive' : 'Pipe';
@@ -64,6 +64,8 @@ export class DeadCodeAnalyzerService {
 
           // Check if used in Routing (by checking if the class name appears in routing modules)
           let usedInRouting = false;
+          // Check if exported from a barrel index.ts (indicates it is a public API / shared module export)
+          let exportedFromBarrel = false;
           const references = classDecl.findReferencesAsNodes();
           for (const ref of references) {
             const refFile = ref.getSourceFile().getFilePath();
@@ -73,11 +75,19 @@ export class DeadCodeAnalyzerService {
               usedInRouting = true;
               break;
             }
+            // If the class is re-exported from an index.ts barrel file, treat it as used
+            if (
+              refFile.endsWith('index.ts') &&
+              (refLine.startsWith('export') || ref.getParent()?.getParent()?.getText().startsWith('export'))
+            ) {
+              exportedFromBarrel = true;
+              break;
+            }
           }
 
-          // If not used in HTML and not used in Routing, we flag it.
+          // If not used in HTML, not used in Routing, and not barrel-exported, we flag it.
           // Note: Pipes might just be checked by their name.
-          if (!usedInHtml && !usedInRouting) {
+          if (!usedInHtml && !usedInRouting && !exportedFromBarrel) {
             const filePath = classDecl.getSourceFile().getFilePath();
             let fileResult = results.find(r => r.file === filePath);
             if (!fileResult) {
@@ -107,7 +117,7 @@ export class DeadCodeAnalyzerService {
       const args = decorator.getArguments();
       if (args.length > 0 && args[0].getKind() === SyntaxKind.ObjectLiteralExpression) {
         const obj = args[0] as ObjectLiteralExpression;
-        let propertyName = classDecl.getDecorator('Pipe') || classDecl.getDecorators().some(d => d.getName() === 'Pipe') ? 'name' : 'selector';
+        let propertyName = classDecl.getDecorator('Pipe') !== undefined ? 'name' : 'selector';
         const prop = obj.getProperty(propertyName);
 
         if (prop && Node.isPropertyAssignment(prop)) {

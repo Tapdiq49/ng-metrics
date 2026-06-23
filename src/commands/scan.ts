@@ -12,7 +12,7 @@ export const scanCommand = new Command('scan')
 
     try {
       const scanner = new PackageScannerService();
-      const scanResult = scanner.scan();
+      const scanResult = scanner.scan(process.cwd());
       const riskAnalyzer = new RiskAnalysisService();
       const healthScore = riskAnalyzer.analyze(scanResult);
       const fixSuggestionService = new FixSuggestionService();

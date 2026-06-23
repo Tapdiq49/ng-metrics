@@ -104,20 +104,32 @@ export class BundleAnalyzerService {
    * Generates recommendations for reducing bundle size
    */
   private generateRecommendations(bundles: BundleFile[]): string[] {
-    const recommendations: string[] = [
-      'Consider using Angular CLI\'s built-in build optimizer',
-      'Use lazy loading for feature modules to reduce initial bundle size',
-      'Tree-shake unused dependencies and code',
-      'Optimize images and assets in your project'
-    ];
+    const recommendations: string[] = [];
 
-    const hasLargeVendor = bundles.some(b => 
-      b.type === 'vendor' && b.sizeBytes > 500 * 1024 // > 500 KB
+    const mainBundle = bundles.find(b => b.type === 'main');
+    const hasLargeMain = mainBundle !== undefined && mainBundle.sizeBytes > 1 * 1024 * 1024;
+    const hasLargeVendor = bundles.some(b => b.type === 'vendor' && b.sizeBytes > 500 * 1024);
+    const hasNoChunks = !bundles.some(b => b.type === 'chunk');
+    const hasLargeNonChunk = bundles.some(
+      b => b.type !== 'chunk' && b.type !== 'styles' && b.sizeBytes > 500 * 1024
     );
 
-    if (hasLargeVendor) {
-      recommendations.push('Vendor bundle is large - consider splitting into smaller chunks or using differential loading');
+    // Always suggest the CLI build optimizer — it is universally applicable
+    recommendations.push("Consider using Angular CLI's built-in build optimizer (ng build --configuration production)");
+
+    if (hasLargeMain || hasNoChunks) {
+      recommendations.push('Use lazy loading for feature modules to reduce the initial bundle size');
     }
+
+    if (hasLargeNonChunk) {
+      recommendations.push('Tree-shake unused dependencies and remove dead code to reduce bundle weight');
+    }
+
+    if (hasLargeVendor) {
+      recommendations.push('Vendor bundle is large — consider splitting into smaller chunks or using differential loading');
+    }
+
+    recommendations.push('Optimise images and assets (use WebP, compress SVGs, enable asset hashing)');
 
     return recommendations;
   }

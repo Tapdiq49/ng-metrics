@@ -81,7 +81,8 @@ export class CodeAnalysisService {
     if (!this.config.exclude || this.config.exclude.length === 0) {
       return false;
     }
-    const relativePath = path.relative(projectPath, filePath);
+    // Normalize to forward slashes for cross-platform compatibility (Windows uses backslashes)
+    const relativePath = path.relative(projectPath, filePath).replace(/\\/g, '/');
     return this.config.exclude.some(excludePattern => {
       if (excludePattern.endsWith('/')) {
         return relativePath.startsWith(excludePattern);
@@ -165,17 +166,28 @@ export class CodeAnalysisService {
     }
 
     // Check RxJS Subscription Memory Leak
+    // We scan every subscribe() call individually. If the *whole file* already
+    // contains a recognised cleanup token we assume it is handled, which avoids
+    // the most common false-positive (one takeUntil covering all subscriptions).
     if (this.config.rules?.rxjsMemoryLeak) {
-      const hasSubscribe = content.includes('.subscribe(');
-      const hasUnsubscribe = content.includes('.unsubscribe()') || content.includes('takeUntil') || content.includes('first(') || content.includes('take(1)');
-      if (hasSubscribe && !hasUnsubscribe) {
-        const subIndex = lines.findIndex(l => l.includes('.subscribe('));
-        issues.push({
-          type: 'rxjs_issue',
-          message: 'Potential memory leak: active subscription found without takeUntil, take(1), first(), or unsubscribe()',
-          line: subIndex !== -1 ? subIndex + 1 : undefined,
-          suggestion: "Clean up the subscription using the 'takeUntil' operator with a destroy subject, or store it and call '.unsubscribe()' in ngOnDestroy()."
-        });
+      const hasCleanupInFile =
+        content.includes('.unsubscribe()') ||
+        content.includes('takeUntil') ||
+        content.includes('first(') ||
+        content.includes('take(1)') ||
+        content.includes('takeUntilDestroyed');
+
+      if (!hasCleanupInFile) {
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].includes('.subscribe(')) {
+            issues.push({
+              type: 'rxjs_issue',
+              message: 'Potential memory leak: active subscription found without takeUntil, take(1), first(), or unsubscribe()',
+              line: i + 1,
+              suggestion: "Clean up the subscription using the 'takeUntil' operator with a destroy subject, or store it and call '.unsubscribe()' in ngOnDestroy()."
+            });
+          }
+        }
       }
     }
 
@@ -201,12 +213,13 @@ export class CodeAnalysisService {
         });
       }
 
-      if (this.config.rules?.viewChildStatic && line.includes('@ViewChild') && line.includes('static:')) {
+      // Only flag static: true — static: false is still valid Angular syntax
+      if (this.config.rules?.viewChildStatic && line.includes('@ViewChild') && /static\s*:\s*true/.test(line)) {
         issues.push({
           type: 'deprecated_api',
-          message: '@ViewChild static:true is deprecated',
+          message: '@ViewChild({ static: true }) is no longer needed — the static option was removed in Angular 9+',
           line: lineNumber,
-          suggestion: "Remove the '{ static: true }' or '{ static: false }' option parameter entirely."
+          suggestion: "Remove the '{ static: true }' option from @ViewChild. The decorator resolves statically by default when no lifecycle hooks are involved."
         });
       }
 
@@ -257,14 +270,14 @@ export class CodeAnalysisService {
   private detectNestedSubscriptions(lines: string[]): CodeIssue[] {
     const issues: CodeIssue[] = [];
     let subscriptionDepth = 0;
-    let inSubscription = false;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const lineNumber = i + 1;
 
       if (line.includes('.subscribe(')) {
-        if (inSubscription) {
+        if (subscriptionDepth > 0) {
+          // We are already inside a subscribe block — this is nested
           issues.push({
             type: 'rxjs_issue',
             message: 'Nested subscriptions detected - consider using higher-order operators (switchMap, mergeMap, etc.)',
@@ -272,16 +285,24 @@ export class CodeAnalysisService {
             suggestion: "Use higher-order mapping operators like 'switchMap', 'mergeMap', or 'concatMap' to chain observable requests cleanly."
           });
         }
-        subscriptionDepth++;
-        inSubscription = true;
       }
 
+      // Count net open parens this line to track depth correctly.
+      // Must be done AFTER the subscribe check so we capture the
+      // depth *before* the current line's parens are applied.
       const openParens = (line.match(/\(/g) || []).length;
       const closeParens = (line.match(/\)/g) || []).length;
-      subscriptionDepth -= (closeParens - openParens);
 
-      if (subscriptionDepth <= 0) {
-        inSubscription = false;
+      if (line.includes('.subscribe(')) {
+        // The opening '(' of .subscribe( is already counted above, so
+        // just accumulate the net balance for the rest of the call.
+        subscriptionDepth += openParens - closeParens + 1;
+      } else {
+        subscriptionDepth += openParens - closeParens;
+      }
+
+      if (subscriptionDepth < 0) {
+        subscriptionDepth = 0;
       }
     }
 

@@ -165,9 +165,6 @@ function generateTextReport(report: UnifiedReport): string {
     }
   }
 
-  result += '\n' + chalk.bold('Full Report (JSON):') + '\n';
-  result += '-'.repeat(60) + '\n';
-  result += JSON.stringify(report, null, 2) + '\n';
 
   result += '\n' + chalk.bold('Next Steps:') + '\n';
   result += '-'.repeat(60) + '\n';

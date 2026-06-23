@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import * as path from 'path';
 import { PackageScannerService } from './package-scanner.service';
 import { RiskAnalysisService } from './risk-analysis.service';
@@ -7,6 +6,7 @@ import { FixSuggestionService } from './fix-suggestion.service';
 import { MigrationAdvisorService } from './migration-advisor.service';
 import { ConfigService } from './config.service';
 import { BundleAnalyzerService } from './bundle-analyzer.service';
+import { findProjectRoot } from '../utils/project-root';
 import type { HealthScore, FileAnalysisResult, GroupedSuggestions, MigrationStep, UnifiedReport, Config, BundleAnalysisResult } from '../types';
 
 export class NgMetricsEngineService {
@@ -14,34 +14,6 @@ export class NgMetricsEngineService {
 
   constructor() {
     this.configService = new ConfigService();
-  }
-
-  /**
-   * Climbs up the directory tree starting from startDir until it finds a directory
-   * containing a package.json file. Falls back to process.cwd() if none is found.
-   */
-  private findProjectRoot(startDir: string): string {
-    let currentDir = path.resolve(startDir);
-    
-    try {
-      if (fs.existsSync(currentDir) && fs.statSync(currentDir).isFile()) {
-        currentDir = path.dirname(currentDir);
-      }
-    } catch (e) {
-      // Ignore
-    }
-
-    while (true) {
-      if (fs.existsSync(path.join(currentDir, 'package.json'))) {
-        return currentDir;
-      }
-      const parentDir = path.dirname(currentDir);
-      if (parentDir === currentDir) {
-        break;
-      }
-      currentDir = parentDir;
-    }
-    return process.cwd();
   }
 
   /**
@@ -53,7 +25,7 @@ export class NgMetricsEngineService {
     if (customSrcDir) {
       // Locate the project root containing package.json relative to the custom source directory
       const absoluteSrcDir = path.resolve(projectPath, customSrcDir);
-      resolvedProjectPath = this.findProjectRoot(absoluteSrcDir);
+      resolvedProjectPath = findProjectRoot(absoluteSrcDir);
     }
 
     const config = this.configService.load(resolvedProjectPath);

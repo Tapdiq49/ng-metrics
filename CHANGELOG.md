@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.0] - 2026-06-23
+
+### Fixed
+- **Version Mismatch**: CLI now reads its version dynamically from `package.json` instead of a hardcoded string, so `ng-metrics --version` always returns the correct version.
+- **Upgrade Step Numbering**: The Angular version upgrade suggestion in `FixSuggestionService` no longer prints every step as `1.` — the step counter is now incremented correctly (1., 2., 3., …).
+- **Nested Subscription Detector**: Rewrote the parenthesis-balance algorithm in `CodeAnalysisService.detectNestedSubscriptions` to correctly track subscription depth and avoid false early resets of the `inSubscription` flag.
+- **AST Memory Leak False Positives**: `AstCodeAnalyzerService` now checks whether a file already uses `takeUntil`, `unsubscribe()`, `take(1)`, or `first()` before flagging every `.subscribe()` call as a potential memory leak.
+- **Dead Code False Positives in Libraries**: `DeadCodeAnalyzerService` now recognises classes that are re-exported from a barrel `index.ts` file as "used" and no longer incorrectly flags them as dead code.
+
 ## [1.8.0] - 2026-06-22
 
 ### Added
