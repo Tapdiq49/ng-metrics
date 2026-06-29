@@ -4,9 +4,15 @@ export class RiskAnalysisService {
 
   // TODO: Update this constant with each new Angular major release.
   // Current value reflects Angular 22 (latest as of June 2026).
+  // TODO: Consider fetching latest version dynamically from npm registry
   private static readonly LATEST_ANGULAR_VERSION = 22;
 
   private static readonly RISKY_PACKAGES = ['tslint', 'codelyzer'];
+
+  // Health score thresholds
+  private static readonly HEALTH_LEVEL_EXCELLENT = 85;
+  private static readonly HEALTH_LEVEL_GOOD = 65;
+  private static readonly HEALTH_LEVEL_WARNING = 40;
 
   public analyze(scanResult: ScanResult): HealthScore {
     const issues: string[] = [];
@@ -126,11 +132,11 @@ export class RiskAnalysisService {
   }
 
   private getHealthLevel(score: number): 'excellent' | 'good' | 'warning' | 'critical' {
-    if (score >= 85) {
+    if (score >= RiskAnalysisService.HEALTH_LEVEL_EXCELLENT) {
       return 'excellent';
-    } else if (score >= 65) {
+    } else if (score >= RiskAnalysisService.HEALTH_LEVEL_GOOD) {
       return 'good';
-    } else if (score >= 40) {
+    } else if (score >= RiskAnalysisService.HEALTH_LEVEL_WARNING) {
       return 'warning';
     } else {
       return 'critical';

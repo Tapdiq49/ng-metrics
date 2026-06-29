@@ -2,33 +2,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Project, SyntaxKind, Node } from 'ts-morph';
 import { findProjectRoot } from '../utils/project-root';
+import { scanDirectory } from '../utils/file-system';
 import type { FixChange, FixResult, PackageJson, FileAnalysisResult } from '../types';
 import { DeadCodeAnalyzerService } from './dead-code-analyzer.service';
 
 export class FixEngineService {
   private static readonly SAFE_TO_REMOVE = ['tslint', 'codelyzer'];
-
-  /**
-   * Recursively scans a directory and lists all TypeScript (.ts) files.
-   */
-  private scanDirectory(dir: string): string[] {
-    const files: string[] = [];
-    if (!fs.existsSync(dir)) return files;
-    const items = fs.readdirSync(dir);
-
-    for (const item of items) {
-      const fullPath = path.join(dir, item);
-      const stat = fs.statSync(fullPath);
-
-      if (stat.isDirectory()) {
-        files.push(...this.scanDirectory(fullPath));
-      } else if (fullPath.endsWith('.ts')) {
-        files.push(fullPath);
-      }
-    }
-
-    return files;
-  }
 
   /**
    * Evaluates and applies (if dryRun is false) fixes to package.json and source code files.
@@ -45,7 +24,12 @@ export class FixEngineService {
       throw new Error('package.json not found');
     }
 
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as PackageJson;
+    let packageJson: PackageJson;
+    try {
+      packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as PackageJson;
+    } catch (error) {
+      throw new Error(`Failed to parse package.json: ${(error as Error).message}`);
+    }
     const changes: FixChange[] = [];
 
     // 1. Fix package.json dependencies
@@ -58,7 +42,7 @@ export class FixEngineService {
     // 2. Fix source code files (e.g. ViewChild static, toPromise)
     const srcDir = customSrcDir ? path.resolve(resolvedProjectPath, customSrcDir) : path.resolve(resolvedProjectPath, 'src');
     if (fs.existsSync(srcDir)) {
-      const files = this.scanDirectory(srcDir);
+      const files = scanDirectory(srcDir, ['.ts']);
       for (const file of files) {
         const fileContent = fs.readFileSync(file, 'utf8');
         const lines = fileContent.split('\n');
@@ -178,7 +162,7 @@ export class FixEngineService {
     if (componentsToRemove.size > 0) {
       const tsProject = new Project({ skipAddingFilesFromTsConfig: true });
       // Use explicit file enumeration instead of glob to avoid Windows path issues
-      const allTsFiles = this.scanDirectory(path.resolve(projectPath, srcDir));
+      const allTsFiles = scanDirectory(path.resolve(projectPath, srcDir), ['.ts']);
       for (const tsFile of allTsFiles) {
         tsProject.addSourceFileAtPath(tsFile);
       }

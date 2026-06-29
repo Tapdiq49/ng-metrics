@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { AstCodeAnalyzerService } from './ast-code-analyzer.service';
 import { DeadCodeAnalyzerService } from './dead-code-analyzer.service';
+import { scanDirectory } from '../utils/file-system';
 import type { CodeIssue, FileAnalysisResult, Config } from '../types';
 
 export class CodeAnalysisService {
@@ -48,7 +49,7 @@ export class CodeAnalysisService {
       return results;
     }
 
-    const files = this.scanDirectory(srcDir);
+    const files = scanDirectory(srcDir, ['.ts', '.html'], this.config.exclude || []);
 
     for (const file of files) {
       if (this.shouldExcludeFile(file, projectPath)) {
@@ -89,30 +90,6 @@ export class CodeAnalysisService {
       }
       return relativePath.includes(excludePattern);
     });
-  }
-
-  /**
-   * Recursively scans a directory to find all TypeScript (.ts) and HTML (.html) files.
-   * 
-   * @param dir The directory path to scan.
-   * @returns An array of absolute file paths matching the extensions.
-   */
-  private scanDirectory(dir: string): string[] {
-    const files: string[] = [];
-    const items = fs.readdirSync(dir);
-
-    for (const item of items) {
-      const fullPath = path.join(dir, item);
-      const stat = fs.statSync(fullPath);
-
-      if (stat.isDirectory()) {
-        files.push(...this.scanDirectory(fullPath));
-      } else if (fullPath.endsWith('.ts') || fullPath.endsWith('.html')) {
-        files.push(fullPath);
-      }
-    }
-
-    return files;
   }
 
   /**

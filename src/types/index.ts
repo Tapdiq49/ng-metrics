@@ -157,3 +157,11 @@ export interface BundleAnalysisResult {
 export interface ConfigFile {
   ngMetrics?: Config;
 }
+
+export interface SecurityAuditReport {
+  packages: PackageMetadata[];
+  code: Array<{
+    file: string;
+    issues: CodeIssue[];
+  }>;
+}

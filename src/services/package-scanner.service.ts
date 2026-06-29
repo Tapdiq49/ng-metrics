@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { PackageMetadata, ScanResult } from '../types';
+import type { PackageMetadata, ScanResult, PackageJson } from '../types';
 
 export class PackageScannerService {
   private static readonly ANGULAR_PACKAGE_PATTERNS = [
@@ -26,7 +26,12 @@ export class PackageScannerService {
       throw new Error('package.json not found in current directory');
     }
 
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+    let packageJson: PackageJson;
+    try {
+      packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as PackageJson;
+    } catch (error) {
+      throw new Error(`Failed to parse package.json: ${(error as Error).message}`);
+    }
     // Combine both runtime dependencies and development dependencies
     const allDependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
     const packages: PackageMetadata[] = [];

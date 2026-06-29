@@ -4,6 +4,7 @@ import ora from 'ora';
 import { CodeAnalysisService } from '../services/code-analysis.service';
 import { PackageScannerService } from '../services/package-scanner.service';
 import { ConfigService } from '../services/config.service';
+import type { SecurityAuditReport } from '../types';
 
 export const auditCommand = new Command('audit')
   .description('Audit the project for security issues, XSS risks, and unsafe practices')
@@ -16,7 +17,10 @@ export const auditCommand = new Command('audit')
       const scanner = new PackageScannerService();
       const scanResult = scanner.scan();
       const riskyPackages = scanResult.packages.filter(
-        pkg => pkg.status === 'risky' || pkg.status === 'deprecated'
+        pkg => 
+          pkg.status?.includes('risky') || 
+          pkg.status?.includes('deprecated') || 
+          pkg.status?.includes('legacy')
       );
 
       // 2. Code Security Scan
@@ -75,10 +79,11 @@ export const auditCommand = new Command('audit')
 
       console.log('\n' + chalk.bold('Full Security Metadata:'));
       console.log('-'.repeat(50));
-      console.log(JSON.stringify({
+      const report: SecurityAuditReport = {
         packages: riskyPackages,
         code: securityIssues
-      }, null, 2));
+      };
+      console.log(JSON.stringify(report, null, 2));
 
     } catch (error) {
       spinner.fail(chalk.red('Security audit failed!'));

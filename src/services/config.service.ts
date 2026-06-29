@@ -85,6 +85,35 @@ export class ConfigService {
   }
 
   private mergeWithDefaults(userConfig: Config): Config {
+    // Validate srcDir is a string
+    if (userConfig.srcDir !== undefined && typeof userConfig.srcDir !== 'string') {
+      console.warn('[ng-metrics] Warning: srcDir must be a string, using default');
+      userConfig.srcDir = undefined;
+    }
+
+    // Validate exclude is an array
+    if (userConfig.exclude !== undefined && !Array.isArray(userConfig.exclude)) {
+      console.warn('[ng-metrics] Warning: exclude must be an array, using default');
+      userConfig.exclude = undefined;
+    }
+
+    // Validate minHealthScore is a number between 0 and 100
+    if (userConfig.minHealthScore !== undefined) {
+      if (typeof userConfig.minHealthScore !== 'number') {
+        console.warn('[ng-metrics] Warning: minHealthScore must be a number, using default');
+        userConfig.minHealthScore = undefined;
+      } else if (userConfig.minHealthScore < 0 || userConfig.minHealthScore > 100) {
+        console.warn('[ng-metrics] Warning: minHealthScore must be between 0 and 100, using default');
+        userConfig.minHealthScore = undefined;
+      }
+    }
+
+    // Validate useAst is a boolean
+    if (userConfig.useAst !== undefined && typeof userConfig.useAst !== 'boolean') {
+      console.warn('[ng-metrics] Warning: useAst must be a boolean, using default');
+      userConfig.useAst = undefined;
+    }
+
     return {
       ...this.defaultConfig,
       ...userConfig,

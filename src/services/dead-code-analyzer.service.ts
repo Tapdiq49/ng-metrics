@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Project, SyntaxKind, ClassDeclaration, Node, ObjectLiteralExpression, PropertyAssignment } from 'ts-morph';
+import { scanDirectory } from '../utils/file-system';
 import type { FileAnalysisResult } from '../types';
 
 export class DeadCodeAnalyzerService {
@@ -21,14 +22,15 @@ export class DeadCodeAnalyzerService {
     });
 
     // Add all TS files in src manually to avoid glob path issues on Windows
-    const allTsFiles = this.scanFiles(absoluteSrcDir, '.ts');
+    const allTsFiles = scanDirectory(absoluteSrcDir, ['.ts']);
     for (const tsFile of allTsFiles) {
       if (fs.existsSync(tsFile)) {
         project.addSourceFileAtPath(tsFile);
       }
     }
 
-    const allHtmlFiles = this.scanFiles(absoluteSrcDir, '.html');
+    const allHtmlFiles = scanDirectory(absoluteSrcDir, ['.html']);
+    // TODO: Optimize: instead of reading all HTML into memory, process files one by one
     let allHtmlContent = '';
 
     for (const htmlFile of allHtmlFiles) {
@@ -127,24 +129,5 @@ export class DeadCodeAnalyzerService {
     }
 
     return selector;
-  }
-
-  private scanFiles(dir: string, extension: string): string[] {
-    const files: string[] = [];
-    if (!fs.existsSync(dir)) return files;
-    const items = fs.readdirSync(dir);
-
-    for (const item of items) {
-      const fullPath = path.join(dir, item);
-      const stat = fs.statSync(fullPath);
-
-      if (stat.isDirectory()) {
-        files.push(...this.scanFiles(fullPath, extension));
-      } else if (fullPath.endsWith(extension)) {
-        files.push(fullPath);
-      }
-    }
-
-    return files;
   }
 }

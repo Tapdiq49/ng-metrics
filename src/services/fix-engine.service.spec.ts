@@ -6,10 +6,11 @@ import { DeadCodeAnalyzerService } from './dead-code-analyzer.service';
 
 vi.mock('fs');
 
-const mockExistsSync = fs.existsSync as MockedFunction<typeof fs.existsSync>;
-const mockReadFileSync = fs.readFileSync as MockedFunction<typeof fs.readFileSync>;
-const mockWriteFileSync = fs.writeFileSync as MockedFunction<typeof fs.writeFileSync>;
-const mockReaddirSync = fs.readdirSync as MockedFunction<typeof fs.readdirSync>;
+const mockExistsSync = vi.mocked(fs.existsSync);
+const mockReadFileSync = vi.mocked(fs.readFileSync);
+const mockWriteFileSync = vi.mocked(fs.writeFileSync);
+const mockReaddirSync = vi.mocked(fs.readdirSync);
+const mockUnlinkSync = vi.mocked(fs.unlinkSync);
 
 describe('FixEngineService', () => {
   let service: FixEngineService;
@@ -78,8 +79,7 @@ describe('FixEngineService', () => {
       }
     ]);
 
-    const mockUnlinkSync = vi.fn();
-    (fs.unlinkSync as any) = mockUnlinkSync;
+    mockUnlinkSync.mockImplementation(vi.fn());
 
     // ACT
     const result = service.apply(process.cwd(), undefined, false);

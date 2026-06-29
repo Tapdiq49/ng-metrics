@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.10.0] - 2026-06-29
+
+### Fixed
+- **Security Audit Filter Bug**: Fixed `audit` command where risky/deprecated packages were not detected correctly due to exact string matching — now uses substring checks.
+- **JSON Parsing Errors**: Added proper try-catch error handling for JSON.parse operations in `PackageScannerService` and `FixEngineService` with meaningful error messages.
+
+### Improved
+- **Type Safety**: Removed all `any` type usages from source code (replaced with proper types like `Record<string, unknown>`, `PackageJson`, and used `vi.mocked()` instead of type casts in tests).
+- **Code Duplication**: Extracted shared directory scanning logic to `src/utils/file-system.ts` and updated all services to use it.
+- **Input Validation**: Added comprehensive input validation to `ConfigService` for all configuration options (srcDir, exclude, minHealthScore, useAst).
+- **Magic Numbers**: Replaced hardcoded health score thresholds with named constants in `RiskAnalysisService` for better maintainability.
+
 ## [1.9.0] - 2026-06-23
 
 ### Fixed
