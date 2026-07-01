@@ -6,6 +6,7 @@ import * as path from 'path';
 import { stringify } from 'yaml';
 import { NgMetricsEngineService } from '../services/ng-metrics-engine.service';
 import { TemplateRendererService } from '../services/template-renderer.service';
+import { ConfigService } from '../services/config.service';
 import type { UnifiedReport, PackageMetadata, FixSuggestion, MigrationStep } from '../types';
 
 export const analyzeCommand = new Command('analyze')
@@ -13,12 +14,24 @@ export const analyzeCommand = new Command('analyze')
   .option('-d, --dir <dir>', 'Source directory to analyze (default: src)')
   .option('-f, --format <format>', 'Output format: text, json, yaml, html (default: text)')
   .option('-o, --output <file>', 'Output file path (optional, saves to file instead of stdout)')
+  .option('--fail-on-low-score', 'Fail the process if health score is below minHealthScore from config')
+  .option('--min-score <score>', 'Override minHealthScore from config with this value')
   .action(async (options) => {
     const spinner = ora('Running full analysis...').start();
 
     try {
       const engine = new NgMetricsEngineService();
       const report = engine.analyze(process.cwd(), options.dir);
+      
+      // Load config for CI check
+      const configService = new ConfigService();
+      const config = configService.load(process.cwd());
+      
+      // Determine the minimum score threshold
+      let minScore = config.minHealthScore;
+      if (options.minScore) {
+        minScore = parseInt(options.minScore, 10);
+      }
 
       spinner.succeed(chalk.green('Analysis complete!'));
 
@@ -52,9 +65,20 @@ export const analyzeCommand = new Command('analyze')
       } else {
         console.log(outputContent);
       }
+      
+      // Check if we need to fail on low score
+      if (options.failOnLowScore && minScore !== undefined) {
+        if (report.projectHealth.score < minScore) {
+          console.error(chalk.red(`\n❌ Health score (${report.projectHealth.score}/100) is below the required minimum (${minScore}/100)`));
+          process.exit(1);
+        } else {
+          console.log(chalk.green(`\n✅ Health score (${report.projectHealth.score}/100) meets or exceeds the required minimum (${minScore}/100)`));
+        }
+      }
     } catch (error) {
       spinner.fail(chalk.red('Analysis failed!'));
       console.error(chalk.red(error instanceof Error ? error.message : 'Unknown error'));
+      process.exit(1);
     }
   });
 

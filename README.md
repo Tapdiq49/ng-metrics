@@ -309,14 +309,87 @@ Generates step-by-step migration plans for:
 | `ng-metrics fix` | Show available fixes (dry-run) |
 | `ng-metrics --help` | Show all commands and options |
 
+## CI/CD Integration
+
+ng-metrics can be easily integrated into your CI/CD pipelines. **This integration is optional** - you can use ng-metrics normally without any CI setup.
+
+If you want to automatically check your project's health on every commit or pull request (and optionally block builds/deploys if the health score is too low), follow the examples below.
+
+### GitHub Actions
+
+Add a `.github/workflows/ng-metrics.yml` file to your project:
+
+```yaml
+name: ng-metrics CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  ng-metrics:
+    name: Run ng-metrics Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install ng-metrics
+        run: npm install -g ng-metrics
+      
+      - name: Run ng-metrics analyze
+        run: ng-metrics analyze --fail-on-low-score
+      
+      - name: Upload analysis report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ng-metrics-report
+          path: ng-metrics-report.*
+```
+
+### GitLab CI
+
+Add a `.gitlab-ci.yml` file to your project (or add to existing one):
+
+```yaml
+stages:
+  - analyze
+
+ng-metrics:
+  stage: analyze
+  image: node:20
+  script:
+    - npm install -g ng-metrics
+    - ng-metrics analyze --fail-on-low-score
+  artifacts:
+    when: always
+    paths:
+      - ng-metrics-report.*
+```
+
+### CI Command Options
+
+All of these options are **completely optional**:
+
+- `--fail-on-low-score`: Fails the process with exit code 1 if the health score is below `minHealthScore` (only use this if you want to block CI pipelines on low scores)
+- `--min-score <score>`: Overrides the config value and uses this minimum score instead (requires `--fail-on-low-score`)
+- `--output <file>`: Saves the report to a file for later review (can be used with or without CI)
+
 ## Roadmap
 
 Future features planned:
-- CI/CD integration support
 - Custom rule configuration
 - Performance analysis
 - Multi-project workspace support
-- GitHub Actions integration
 
 ## Contributing
 

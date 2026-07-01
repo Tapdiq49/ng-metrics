@@ -1,0 +1,13 @@
+stages:
+  - analyze
+
+ng-metrics:
+  stage: analyze
+  image: node:20
+  script:
+    - npm install -g ng-metrics
+    - ng-metrics analyze --fail-on-low-score
+  artifacts:
+    when: always
+    paths:
+      - ng-metrics-report.*

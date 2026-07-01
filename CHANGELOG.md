@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.0] - 2026-07-01
+
+### Added
+- **CI/CD Integration Support**: Added new command line options and example workflow configurations for GitHub Actions and GitLab CI.
+  - `--fail-on-low-score`: Fails the process with exit code 1 if health score is below configured `minHealthScore`
+  - `--min-score <score>`: Overrides the configured minimum health score
+  - Example GitHub Actions workflow: `.github/workflows/ci.yml`
+  - Example GitLab CI configuration: `docs/gitlab-ci-example.yml`
+- **Documentation Updates**: Added comprehensive CI/CD integration guide to README.md with clear notes that all CI features are optional.
+
+### Changed
+- Improved error handling in `analyze` command to ensure proper process exit codes when using CI flags.
+
 ## [1.10.0] - 2026-06-29
 
 ### Fixed
