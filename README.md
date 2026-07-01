@@ -317,7 +317,7 @@ If you want to automatically check your project's health on every commit or pull
 
 ### GitHub Actions
 
-Add a `.github/workflows/ng-metrics.yml` file to your project:
+Add a `.github/workflows/ng-metrics.yml` file to your Angular project (**Requires ng-metrics v1.11.0 or later**):
 
 ```yaml
 name: ng-metrics CI
@@ -358,7 +358,7 @@ jobs:
 
 ### GitLab CI
 
-Add a `.gitlab-ci.yml` file to your project (or add to existing one):
+Add a `.gitlab-ci.yml` file to your Angular project (or add to existing one) (**Requires ng-metrics v1.11.0 or later**):
 
 ```yaml
 stages:

@@ -8,7 +8,7 @@ on:
 
 jobs:
   ng-metrics:
-    name: Run ng-metrics Analysis
+    name: Build & Test ng-metrics
     runs-on: ubuntu-latest
     
     steps:
@@ -19,17 +19,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
       
-      - name: Install ng-metrics
-        run: npm install -g ng-metrics
+      - name: Install dependencies
+        run: npm ci
       
-      - name: Run ng-metrics analyze
-        run: ng-metrics analyze --fail-on-low-score
-        continue-on-error: false
+      - name: Build ng-metrics
+        run: npm run build
       
-      - name: Upload analysis report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: ng-metrics-report
-          path: ng-metrics-report.*
+      - name: Run tests
+        run: npm test
+
